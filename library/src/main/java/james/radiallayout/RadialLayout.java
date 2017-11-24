@@ -1,5 +1,7 @@
 package james.radiallayout;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
@@ -429,7 +431,7 @@ public class RadialLayout extends View {
                     }
 
                     for (int i = result.size(); i < RadialLayout.this.items.size(); i++) {
-                        RadialLayout.this.items.remove(i);
+                        RadialLayout.this.items.get(i).removeFrom(RadialLayout.this);
                     }
                 }
             }
@@ -697,6 +699,33 @@ public class RadialLayout extends View {
                 @Override
                 public void onAnimationUpdate(ValueAnimator valueAnimator) {
                     scale = (float) valueAnimator.getAnimatedValue();
+                }
+            });
+            animator.start();
+        }
+
+        /**
+         * Removes the item from the layout.
+         *
+         * @param layout the layout to be removed from
+         */
+        private void removeFrom(final RadialLayout layout) {
+            if (animator != null && animator.isStarted())
+                animator.cancel();
+
+            animator = ValueAnimator.ofFloat(scale, 0);
+            animator.setInterpolator(new DecelerateInterpolator());
+            animator.setDuration(200);
+            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                    scale = (float) valueAnimator.getAnimatedValue();
+                }
+            });
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    layout.items.remove(RadialItem.this);
                 }
             });
             animator.start();
