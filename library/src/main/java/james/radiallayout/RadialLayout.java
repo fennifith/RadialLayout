@@ -182,6 +182,8 @@ public class RadialLayout extends View {
             @Override
             protected Object run() throws InterruptedException {
                 List<RadialItem> items = new ArrayList<>(RadialLayout.this.items);
+                if (items.size() < 1)
+                    return null;
 
                 Collections.sort(items, new Comparator<RadialItem>() {
                     @Override
@@ -322,6 +324,11 @@ public class RadialLayout extends View {
                 List<RadialItem> newItems = new ArrayList<>();
                 for (RadialItem item : items) {
                     newItems.add(new RadialItem(item));
+                }
+
+                if (newItems.size() < 1) {
+                    RadialLayout.this.items = newItems;
+                    return null;
                 }
 
                 Collections.sort(newItems, new Comparator<RadialItem>() {

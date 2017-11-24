@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
             public void onMeClick(RadialLayout layout) {
                 List<RadialLayout.RadialItem> items = layout.getItems();
                 items.remove(0);
-                layout.updateItems(items);
+                layout.setItems(items);
             }
         });
     }
