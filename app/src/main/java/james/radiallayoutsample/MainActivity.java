@@ -1,77 +1,60 @@
 package james.radiallayoutsample;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.ViewTreeObserver;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import james.radiallayout.CircleImageView;
-import james.radiallayout.utils.ConversionUtils;
 import james.radiallayout.RadialLayout;
 
 public class MainActivity extends AppCompatActivity {
+
+    private RadialLayout layout;
+    private Bitmap resource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        RadialLayout layout = findViewById(R.id.radialLayout);
+        layout = findViewById(R.id.radialLayout);
 
-        List<RadialLayout.RadialItem> items = new ArrayList<>();
+        Glide.with(this).asBitmap().load("https://TheAndroidMaster.github.io/images/headers/highway.jpg").into(new SimpleTarget<Bitmap>() {
+            @Override
+            public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                MainActivity.this.resource = resource;
+                List<RadialLayout.RadialItem> items = new ArrayList<>();
 
-        CircleImageView profileImageView = new CircleImageView(this);
-        profileImageView.setElevation(ConversionUtils.dpToPx(4));
-        items.add(new RadialLayout.RadialItem(profileImageView, 3, -1));
-        profileImageView.getViewTreeObserver().addOnGlobalLayoutListener(new GlideTreeObserver(profileImageView));
+                for (int i = 0; i < 5; i++)
+                    items.add(new RadialLayout.RadialItem("i", resource, (int) (Math.random() * 4), (int) (Math.random() * 4)));
 
-        for (int i = 1; i < 100; i++) {
-            final CircleImageView imageView = new CircleImageView(this);
-            imageView.setElevation(ConversionUtils.dpToPx(2));
-            items.add(new RadialLayout.RadialItem(imageView, (int) (Math.random() * 4), (int) (Math.random() * 4)));
-            imageView.getViewTreeObserver().addOnGlobalLayoutListener(new GlideTreeObserver(imageView));
-        }
-
-        layout.setItems(items);
-    }
-
-    public static class GlideTreeObserver implements ViewTreeObserver.OnGlobalLayoutListener {
-
-        private CircleImageView imageView;
-
-        public GlideTreeObserver(CircleImageView imageView) {
-            this.imageView = imageView;
-        }
-
-        @Override
-        public void onGlobalLayout() {
-            String url;
-            switch ((int) (Math.random() * 4)) {
-                case 0:
-                    url = "https://TheAndroidMaster.github.io/images/headers/highway.jpg";
-                    break;
-                case 1:
-                    url = "https://TheAndroidMaster.github.io/images/headers/onamountain.jpeg";
-                    break;
-                case 2:
-                    url = "https://TheAndroidMaster.github.io/images/headers/rocks.jpg";
-                    break;
-                case 3:
-                    url = "https://TheAndroidMaster.github.io/images/headers/vukheader.jpg";
-                    break;
-                case 4:
-                    url = "https://TheAndroidMaster.github.io/images/headers/cabbage.jpg";
-                    break;
-                default:
-                    return;
+                layout.setItems(items);
+                layout.setMeBitmap(resource);
             }
+        });
 
-            Glide.with(imageView.getContext()).load(url).into(imageView);
-            imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-        }
+        layout.setClickListener(new RadialLayout.ClickListener() {
+            @Override
+            public void onClick(RadialLayout layout, RadialLayout.RadialItem item, int index) {
+                List<RadialLayout.RadialItem> items = layout.getItems();
+                items.add(new RadialLayout.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
+                layout.updateItems(items);
+            }
+        });
+
+        layout.setMeListener(new RadialLayout.MeClickListener() {
+            @Override
+            public void onMeClick(RadialLayout layout) {
+                List<RadialLayout.RadialItem> items = layout.getItems();
+                items.remove(0);
+                layout.updateItems(items);
+            }
+        });
     }
 }
