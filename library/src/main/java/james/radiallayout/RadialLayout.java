@@ -171,6 +171,11 @@ public class RadialLayout extends View {
      */
     public void setItems(List<RadialItem> items) {
         this.items = items;
+        if (items.size() < 1) {
+            isReady = true;
+            return;
+        }
+
         isReady = false;
 
         new Action() {
@@ -184,8 +189,6 @@ public class RadialLayout extends View {
             @Override
             protected Object run() throws InterruptedException {
                 List<RadialItem> items = new ArrayList<>(RadialLayout.this.items);
-                if (items.size() < 1)
-                    return null;
 
                 Collections.sort(items, new Comparator<RadialItem>() {
                     @Override
@@ -310,6 +313,11 @@ public class RadialLayout extends View {
             return;
         }
 
+        if (items.size() < 1) {
+            RadialLayout.this.items = items;
+            return;
+        }
+
         new Action<List<RadialItem>>() {
             @NonNull
             @Override
@@ -323,11 +331,6 @@ public class RadialLayout extends View {
                 List<RadialItem> newItems = new ArrayList<>();
                 for (RadialItem item : items) {
                     newItems.add(new RadialItem(item));
-                }
-
-                if (newItems.size() < 1) {
-                    RadialLayout.this.items = newItems;
-                    return null;
                 }
 
                 Collections.sort(newItems, new Comparator<RadialItem>() {
@@ -452,8 +455,7 @@ public class RadialLayout extends View {
                 canvas.drawBitmap(item.getCircleImage(getResources()), item.getMatrix((canvas.getWidth() / 2) + offsetX, (canvas.getHeight() / 2 + offsetY)), paint);
             }
 
-            if (items.size() > 0)
-                postInvalidate();
+            postInvalidate();
         } else if (currentUser != null && currentUserScale < 1)
             postInvalidate();
     }

@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
                 if (items.size() > 0) {
                     items.remove(0);
                     layout.updateItems(items);
+                } else {
+                    items.add(new RadialLayout.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
+                    layout.updateItems(items);
                 }
             }
         });
