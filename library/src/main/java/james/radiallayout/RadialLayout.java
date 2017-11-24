@@ -298,9 +298,6 @@ public class RadialLayout extends View {
                         }
                     });
                 }
-
-                //for testing current user bitmap
-                // setMeBitmap(ImageUtils.drawableToBitmap(getResources().getDrawable(R.drawable.ic_discover)));
             }
         }.execute();
     }
@@ -429,6 +426,10 @@ public class RadialLayout extends View {
                             newItem.scale = 0;
                             newItem.click();
                         }
+                    }
+
+                    for (int i = result.size(); i < RadialLayout.this.items.size(); i++) {
+                        RadialLayout.this.items.remove(i);
                     }
                 }
             }
