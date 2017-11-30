@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
             public void onMeClick(RadialLayout layout) {
                 List<RadialLayout.RadialItem> items = layout.getItems();
                 if (items.size() > 0) {
-                    items.remove(0);
+                    items.remove(items.size() - 1);
                     layout.updateItems(items);
                 } else {
                     items.add(new RadialLayout.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));

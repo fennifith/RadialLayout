@@ -16,6 +16,7 @@ import android.provider.Settings;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.util.AttributeSet;
@@ -24,7 +25,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
-import android.view.animation.LinearInterpolator;
 
 import com.afollestad.async.Action;
 
@@ -43,10 +43,11 @@ import james.radiallayout.utils.RadialUtils;
 public class RadialLayout extends View {
 
     private Paint paint;
+    private Paint outlinePaint;
     private List<RadialItem> items;
     private boolean isReady;
 
-    private ValueAnimator animator;
+    //private ValueAnimator animator;
     private float offsetX, offsetY;
     private float lastX, lastY;
     private int maxRow;
@@ -82,6 +83,7 @@ public class RadialLayout extends View {
 
     private Bitmap currentUser;
     private float currentUserScale;
+    private int currentUserRadius;
 
     private MeClickListener meListener;
     private ClickListener listener;
@@ -102,6 +104,12 @@ public class RadialLayout extends View {
         paint.setFilterBitmap(true);
         paint.setDither(true);
 
+        outlinePaint = new Paint();
+        outlinePaint.setAntiAlias(true);
+        outlinePaint.setStyle(Paint.Style.STROKE);
+        outlinePaint.setStrokeWidth(ConversionUtils.dpToPx(2));
+        outlinePaint.setColor(ContextCompat.getColor(context, R.color.colorAccent));
+
         setFocusable(true);
         setClickable(true);
 
@@ -112,7 +120,7 @@ public class RadialLayout extends View {
             }
         }
 
-        animator = ValueAnimator.ofFloat(0, 2 * (float) Math.PI);
+        /*animator = ValueAnimator.ofFloat(0, 2 * (float) Math.PI);
         animator.setDuration(500000);
         animator.setRepeatCount(ValueAnimator.INFINITE);
         animator.setRepeatMode(ValueAnimator.RESTART);
@@ -127,11 +135,13 @@ public class RadialLayout extends View {
                 }
             }
         });
-        animator.start();
+        animator.start();*/
+
+        currentUserRadius = ConversionUtils.dpToPx(28);
     }
 
     public void setMeBitmap(Bitmap bitmap) {
-        int size = ConversionUtils.dpToPx(56);
+        int size = ConversionUtils.dpToPx(48);
         bitmap = ThumbnailUtils.extractThumbnail(bitmap, size, size);
 
         RoundedBitmapDrawable drawable = RoundedBitmapDrawableFactory.create(getResources(), bitmap);
@@ -444,10 +454,15 @@ public class RadialLayout extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         if (currentUser != null) {
-            Matrix matrix = new Matrix();
-            matrix.preScale(currentUserScale, currentUserScale, currentUser.getWidth() / 2, currentUser.getHeight() / 2);
-            matrix.postTranslate((canvas.getWidth() - currentUser.getWidth()) / 2, (canvas.getHeight() - currentUser.getHeight()) / 2);
-            canvas.drawBitmap(currentUser, matrix, paint);
+            float scale = currentUserScale - ((float) Math.sqrt(Math.pow(offsetX, 2) + Math.pow(offsetY, 2)) / currentUserRadius);
+            if (scale > 0) {
+                Matrix matrix = new Matrix();
+                matrix.preScale(scale, scale, currentUser.getWidth() / 2, currentUser.getHeight() / 2);
+                matrix.postTranslate((canvas.getWidth() - currentUser.getWidth()) / 2, (canvas.getHeight() - currentUser.getHeight()) / 2);
+                canvas.drawBitmap(currentUser, matrix, paint);
+
+                canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, currentUserRadius * scale, outlinePaint);
+            }
         }
 
         if (isReady) {
@@ -497,7 +512,7 @@ public class RadialLayout extends View {
                     float eventX = event.getX();
                     float eventY = event.getY();
 
-                    if (Math.sqrt(Math.pow((getWidth() / 2) - eventX, 2) + Math.pow((getHeight() / 2) - eventY, 2)) < ConversionUtils.dpToPx(28)) {
+                    if (Math.sqrt(Math.pow((getWidth() / 2) - eventX, 2) + Math.pow((getHeight() / 2) - eventY, 2)) < currentUserRadius && Math.sqrt(Math.pow(offsetX, 2) + Math.pow(offsetY, 2)) < currentUserRadius / 2) {
                         if (meListener != null)
                             meListener.onMeClick(this);
 
