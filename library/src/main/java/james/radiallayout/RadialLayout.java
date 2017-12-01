@@ -42,6 +42,12 @@ import james.radiallayout.utils.RadialUtils;
  */
 public class RadialLayout extends View {
 
+    /**
+     * The radius of the circles in dp. Must be greater than 12, as the value
+     * can vary by +/- 6 based on scale.
+     */
+    public static final int CIRCLE_RADIUS = 36;
+
     private Paint paint;
     private Paint outlinePaint;
     private List<RadialItem> items;
@@ -137,11 +143,11 @@ public class RadialLayout extends View {
         });
         animator.start();*/
 
-        currentUserRadius = ConversionUtils.dpToPx(28);
+        currentUserRadius = ConversionUtils.dpToPx(CIRCLE_RADIUS + 6);
     }
 
     public void setMeBitmap(Bitmap bitmap) {
-        int size = ConversionUtils.dpToPx(48);
+        int size = ConversionUtils.dpToPx(CIRCLE_RADIUS * 2);
         bitmap = ThumbnailUtils.extractThumbnail(bitmap, size, size);
 
         RoundedBitmapDrawable drawable = RoundedBitmapDrawableFactory.create(getResources(), bitmap);
@@ -208,7 +214,7 @@ public class RadialLayout extends View {
                 });
 
                 for (int i = 0; i < items.size(); i++) {
-                    int radius = ConversionUtils.dpToPx(18 + (12 * ((float) i / items.size())));
+                    int radius = ConversionUtils.dpToPx((CIRCLE_RADIUS - 6) + (12 * ((float) i / items.size())));
                     //Log.d("Radial", "Item: " + i + ", Size: " + items.get(i).size + ", Radius: " + radius);
                     items.get(i).setRadius(radius);
                 }
@@ -351,7 +357,7 @@ public class RadialLayout extends View {
                 });
 
                 for (int i = 0; i < newItems.size(); i++) {
-                    int radius = ConversionUtils.dpToPx(18 + (12 * ((float) i / newItems.size())));
+                    int radius = ConversionUtils.dpToPx((CIRCLE_RADIUS - 12) + (12 * ((float) i / newItems.size())));
                     //Log.d("Radial", "Item: " + i + ", Size: " + items.get(i).size + ", Radius: " + radius);
                     RadialItem item = newItems.get(i);
                     if (item.radius <= 0)

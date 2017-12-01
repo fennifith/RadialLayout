@@ -1,9 +1,11 @@
 package james.radiallayout.utils;
 
+import james.radiallayout.RadialLayout;
+
 public class RadialUtils {
 
     public static int getRadius(int row) {
-        return ConversionUtils.dpToPx(((row + 1) * 64) + 4);
+        return ConversionUtils.dpToPx(((row + 1) * (RadialLayout.CIRCLE_RADIUS * 2 + 8)) + 12);
     }
 
     public static int getCircumference(int row) {
