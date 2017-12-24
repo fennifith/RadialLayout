@@ -5,7 +5,7 @@ import james.radiallayout.RadialLayout;
 public class RadialUtils {
 
     public static int getRadius(int row) {
-        return ConversionUtils.dpToPx(((row + 1) * (RadialLayout.CIRCLE_RADIUS * 2 + 8)) + 12);
+        return ConversionUtils.dpToPx(((row + 1) * (RadialLayout.CIRCLE_RADIUS * 2 + RadialLayout.ITEM_SEPARATION)) + 12);
     }
 
     public static int getCircumference(int row) {
