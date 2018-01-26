@@ -1,18 +1,13 @@
 package james.radiallayout;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.media.ThumbnailUtils;
-import android.os.Build;
 import android.os.Handler;
-import android.provider.Settings;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -23,8 +18,6 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewTreeObserver;
-import android.view.animation.DecelerateInterpolator;
 
 import com.afollestad.async.Action;
 
@@ -42,18 +35,24 @@ import james.radiallayout.utils.RadialUtils;
  */
 public class RadialLayout extends View {
 
+    public static final float CLICK_DOWN_SCALE = 0.8f;
+    public static final float CLICK_UP_SCALE = 1.07f;
+
+    public static final float SHADOW_RADIUS = 4;
+    public static final float SHADOW_OFFSET = 2;
+    public static final int SHADOW_COLOR = 170;
+    public static final float SHADOW_SIZE = SHADOW_RADIUS + SHADOW_OFFSET;
+
     /**
      * The radius of the circles in dp. Must be greater than 12, as the value
      * can vary by +/- 6 based on scale.
      */
-    public static final int CIRCLE_RADIUS = 36;
+    public static final int CIRCLE_RADIUS = 34 + ((int) SHADOW_SIZE);
     public static final int ITEM_SEPARATION = 8;
-
-    public static final float CLICK_DOWN_SCALE = 0.8f;
-    public static final float CLICK_UP_SCALE = 1.2f;
 
     private Paint paint;
     private Paint outlinePaint;
+    private Paint shadowPaint;
     private List<RadialItem> items;
     private boolean isReady;
 
@@ -66,15 +65,13 @@ public class RadialLayout extends View {
     private int maxRow;
 
     private float downX, downY;
-    private boolean isDown, isIgnorant, isDragged;
+    private boolean isDown, isFingerDown, isIgnorant, isDragged;
     private Handler handler = new Handler();
     private Runnable upRunnable = new Runnable() {
         @Override
         public void run() {
             isDown = false;
             isIgnorant = false;
-            lastX = 0;
-            lastY = 0;
             velocityX = 0;
             velocityY = 0;
 
@@ -82,11 +79,15 @@ public class RadialLayout extends View {
                 @Override
                 public void run() {
                     if (!isDown) {
-                        if (offsetX > 0.001 || offsetY > 0.001) {
-                            offsetX /= 1.2;
-                            offsetY /= 1.2;
+                        if (Math.abs(offsetX) > 0.01 || Math.abs(offsetY) > 0.01) {
+                            offsetX /= 1.1;
+                            offsetY /= 1.1;
+                            lastX /= 1.1;
+                            lastY /= 1.1;
                             handler.postDelayed(this, 10);
                         } else {
+                            lastX = 0;
+                            lastY = 0;
                             offsetX = 0;
                             offsetY = 0;
                             fingerX = 0;
@@ -100,8 +101,13 @@ public class RadialLayout extends View {
 
     private Bitmap currentUser;
     private float currentUserScale;
+    private List<Float> targetCurrentUserScales;
     private int currentUserRadius;
-    private ValueAnimator currentUserAnimator;
+
+    /**
+     * true once the view has been drawn - will invalidate continuously until then as an alternative to a ViewTreeObserver
+     */
+    private boolean isFirstDrawn;
 
     private MeClickListener meListener;
     private ClickListener listener;
@@ -128,17 +134,24 @@ public class RadialLayout extends View {
         outlinePaint.setStrokeWidth(ConversionUtils.dpToPx(3));
         outlinePaint.setColor(ContextCompat.getColor(context, R.color.colorAccent));
 
+        shadowPaint = new Paint();
+        shadowPaint.setAntiAlias(false);
+        shadowPaint.setFilterBitmap(false);
+        shadowPaint.setDither(false);
+        setLayerType(LAYER_TYPE_SOFTWARE, shadowPaint);
+        shadowPaint.setShadowLayer(ConversionUtils.dpToPx(SHADOW_RADIUS), 0, ConversionUtils.dpToPx(SHADOW_OFFSET), Color.rgb(SHADOW_COLOR, SHADOW_COLOR, SHADOW_COLOR));
+
         setFocusable(true);
         setClickable(true);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && Settings.Global.getFloat(getContext().getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1) != 1) {
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && Settings.Global.getFloat(getContext().getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1) != 1) {
             try {
                 ValueAnimator.class.getMethod("setDurationScale", float.class).invoke(null, 1f); //force animator duration (ignore developer options)
             } catch (Throwable t) {
             }
         }
 
-        /*animator = ValueAnimator.ofFloat(0, 2 * (float) Math.PI);
+        animator = ValueAnimator.ofFloat(0, 2 * (float) Math.PI);
         animator.setDuration(500000);
         animator.setRepeatCount(ValueAnimator.INFINITE);
         animator.setRepeatMode(ValueAnimator.RESTART);
@@ -156,17 +169,24 @@ public class RadialLayout extends View {
         animator.start();*/
 
         currentUserRadius = ConversionUtils.dpToPx(CIRCLE_RADIUS + 6);
+        targetCurrentUserScales = new ArrayList<>();
     }
 
     public void setMeBitmap(Bitmap bitmap) {
         int size = ConversionUtils.dpToPx(CIRCLE_RADIUS * 2);
-        bitmap = ThumbnailUtils.extractThumbnail(bitmap, size, size);
+        int shadowSize = ConversionUtils.dpToPx(SHADOW_SIZE);
+        bitmap = ThumbnailUtils.extractThumbnail(bitmap, size - (shadowSize * 2), size - (shadowSize * 2));
 
         RoundedBitmapDrawable drawable = RoundedBitmapDrawableFactory.create(getResources(), bitmap);
         drawable.setCornerRadius(size / 2);
         drawable.setAntiAlias(true);
 
-        currentUser = ImageUtils.drawableToBitmap(drawable);
+        Bitmap roundedBitmap = ImageUtils.drawableToBitmap(drawable);
+        currentUser = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_4444);
+        Canvas canvas = new Canvas(currentUser);
+        canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (size / 2) - shadowSize - 1, shadowPaint);
+        canvas.drawBitmap(roundedBitmap, shadowSize, shadowSize, paint);
+
         currentUserScale = 0;
         clickMeUp();
 
@@ -298,33 +318,15 @@ public class RadialLayout extends View {
 
             @Override
             protected void done(@Nullable Object result) {
-                int width = getWidth(), height = getHeight();
-                if (width > 0 && height > 0) {
-                    for (RadialItem item : RadialLayout.this.items) {
-                        //Log.d("Radial", "Item: " + RadialLayout.this.items.indexOf(item) + ", X: " + item.getX() + ", Y: " + item.getY());
-                        item.scale = 0;
-                        item.clickUp();
-                    }
-
-                    isReady = true;
-                    invalidate();
-                } else {
-                    getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                        @Override
-                        public void onGlobalLayout() {
-                            for (RadialItem item : RadialLayout.this.items) {
-                                //Log.d("Radial", "Item: " + RadialLayout.this.items.indexOf(item) + ", X: " + item.getX() + ", Y: " + item.getY());
-                                item.scale = 0;
-                                item.clickUp();
-                            }
-
-                            isReady = true;
-                            invalidate();
-
-                            getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        }
-                    });
+                for (RadialItem item : RadialLayout.this.items) {
+                    //Log.d("Radial", "Item: " + RadialLayout.this.items.indexOf(item) + ", X: " + item.getX() + ", Y: " + item.getY());
+                    item.scale = 0;
+                    item.targetRadian = item.radian;
+                    item.clickUp(RadialLayout.this);
                 }
+
+                isReady = true;
+                invalidate();
             }
         }.execute();
     }
@@ -451,7 +453,8 @@ public class RadialLayout extends View {
                             RadialItem newItem = result.get(i);
                             RadialLayout.this.items.add(newItem);
                             newItem.scale = 0;
-                            newItem.clickUp();
+                            newItem.targetRadian = newItem.radian;
+                            newItem.clickUp(RadialLayout.this);
                         }
                     }
 
@@ -466,26 +469,50 @@ public class RadialLayout extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         if (isScrolling) {
-            float newVelocityX = (fingerX - offsetX + (velocityX * 4)) / 6;
-            float newVelocityY = (fingerY - offsetY + (velocityY * 4)) / 6;
-            if ((int) newVelocityX != (int) velocityX || (int) newVelocityY != (int) velocityY) {
-                velocityX = newVelocityX;
-                velocityY = newVelocityY;
-                offsetX += velocityX;
-                offsetY += velocityY;
+            float newVelocityX = ((fingerX - offsetX) + (velocityX * 18)) / 21;
+            float newVelocityY = ((fingerY - offsetY) + (velocityY * 18)) / 21;
+            if (((int) newVelocityX != (int) velocityX || (int) newVelocityY != (int) velocityY)) {
+                if (isFingerDown) {
+                    velocityX = fingerX - offsetX;
+                    velocityY = fingerY - offsetY;
+                } else {
+                    velocityX = newVelocityX;
+                    velocityY = newVelocityY;
+                }
+
+                int distance = (RadialUtils.getRadius(maxRow + 1) * 2) - Math.min(canvas.getWidth(), canvas.getHeight());
+                float boundedX = Math.max(-distance / 2, Math.min(distance / 2, offsetX));
+                float boundedY = Math.max(-distance / 2, Math.min(distance / 2, offsetY));
+
+                offsetX = (((offsetX + velocityX) * 3) + boundedX) / 4;
+                offsetY = (((offsetY + velocityY) * 3) + boundedY) / 4;
                 fingerX = offsetX + velocityX / 2;
                 fingerY = offsetY + velocityY / 2;
+
+                if (!isFingerDown) {
+                    lastX = offsetX;
+                    lastY = offsetY;
+                }
             } else {
                 isScrolling = false;
                 fingerX = offsetX;
                 fingerY = offsetY;
+                velocityX = 0;
+                velocityY = 0;
             }
         }
 
         if (currentUser != null) {
+            if (targetCurrentUserScales.size() > 0) {
+                if (targetCurrentUserScales.size() > 1 && Math.abs(currentUserScale - targetCurrentUserScales.get(0)) < 0.01)
+                    targetCurrentUserScales.remove(0);
+
+                currentUserScale = (targetCurrentUserScales.get(0) + (currentUserScale * 5)) / 6;
+            }
+
             float nScale = 0;
             float distance = (float) Math.sqrt(Math.pow(offsetX + currentUserRadius, 2) + Math.pow(offsetY + currentUserRadius, 2));
-            int totalRadius = Math.min(canvas.getWidth(), canvas.getHeight()) / 2;
+            int totalRadius = (canvas.getWidth() + canvas.getHeight()) / 4;
             if (distance < totalRadius) {
                 nScale = Math.min((float) (Math.sqrt(totalRadius - distance) / Math.sqrt(currentUserRadius * 2)) * currentUserScale, currentUserScale);
             }
@@ -496,26 +523,38 @@ public class RadialLayout extends View {
                 matrix.postTranslate(((canvas.getWidth() - currentUser.getWidth()) / 2) + offsetX, ((canvas.getHeight() - currentUser.getHeight()) / 2) + offsetY);
                 canvas.drawBitmap(currentUser, matrix, paint);
 
-                canvas.drawCircle((canvas.getWidth() / 2) + offsetX, (canvas.getHeight() / 2) + offsetY, currentUserRadius * nScale, outlinePaint);
+                canvas.drawCircle((canvas.getWidth() / 2) + offsetX, (canvas.getHeight() / 2) + offsetY, (currentUser.getWidth() / 2) * nScale, outlinePaint);
             }
         }
 
-        if (isReady) {
-            for (RadialItem item : items) {
+        boolean needsFrame = false;
+
+        if (isReady && canvas.getWidth() > 0 && canvas.getHeight() > 0 && getWidth() > 0 && getHeight() > 0) {
+            isFirstDrawn = true;
+
+            for (int i = 0; i < items.size(); i++) {
+                RadialItem item = items.get(i);
                 Matrix matrix = item.getMatrix(canvas.getWidth(), canvas.getHeight(), offsetX, offsetY);
                 if (matrix != null)
-                    canvas.drawBitmap(item.getCircleImage(getResources()), matrix, paint);
-            }
+                    canvas.drawBitmap(item.getCircleImage(this), matrix, paint);
 
+                item.nextFrame(this);
+                if (!needsFrame)
+                    needsFrame = item.needsFrame();
+            }
+        }
+
+        if ((currentUser != null && targetCurrentUserScales.size() > 0 && (targetCurrentUserScales.size() > 1 || Math.abs(targetCurrentUserScales.get(0) - currentUserScale) >= 0.01))
+                || offsetX != 0 || offsetY != 0 || needsFrame || !isFirstDrawn) {
             postInvalidate();
-        } else if (currentUser != null && currentUserScale < 1)
-            postInvalidate();
+        }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                isFingerDown = true;
                 downX = event.getX();
                 downY = event.getY();
                 if (!isDown) {
@@ -528,7 +567,7 @@ public class RadialLayout extends View {
                     clickMeDown();
 
                     for (RadialItem item : items) {
-                        item.clickUp();
+                        item.clickUp(this);
                     }
                 } else {
                     clickMeUp();
@@ -537,12 +576,13 @@ public class RadialLayout extends View {
                         float itemX = (getWidth() / 2) + item.getX() + offsetX;
                         float itemY = (getHeight() / 2) + item.getY() + offsetY;
                         if (downX > itemX && downX - itemX < item.radius * 2 && downY > itemY && downY - itemY < item.radius * 2) {
-                            item.clickDown();
-                        } else item.clickUp();
+                            item.clickDown(this);
+                        } else item.clickUp(this);
                     }
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
+                isFingerDown = true;
                 handler.removeCallbacks(upRunnable);
                 int width = getWidth(), height = getHeight();
                 int distance = (RadialUtils.getRadius(maxRow + 1) * 2) - Math.min(width, height);
@@ -554,23 +594,25 @@ public class RadialLayout extends View {
 
                     clickMeUp();
                     for (RadialItem item : items) {
-                        item.clickUp();
+                        item.clickUp(this);
                     }
                     return true;
                 } else return false;
             case MotionEvent.ACTION_CANCEL:
+                isFingerDown = false;
                 handler.removeCallbacks(upRunnable);
                 handler.post(upRunnable);
                 isDragged = false;
 
                 clickMeUp();
                 for (RadialItem item : items) {
-                    item.clickUp();
+                    item.clickUp(this);
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                isFingerDown = false;
                 for (RadialItem item : items) {
-                    item.clickUp();
+                    item.clickUp(this);
                 }
 
                 if (ConversionUtils.pxToDp((int) Math.abs(event.getX() - downX)) * ConversionUtils.pxToDp((int) Math.abs(event.getY() - downY)) < 64 && !isDragged) {
@@ -593,7 +635,7 @@ public class RadialLayout extends View {
                             float itemX = (getWidth() / 2) + item.getX() + offsetX;
                             float itemY = (getHeight() / 2) + item.getY() + offsetY;
                             if (eventX > itemX && eventX - itemX < item.radius * 2 && eventY > itemY && eventY - itemY < item.radius * 2) {
-                                item.clickBack();
+                                item.clickBack(this);
 
                                 if (listener != null)
                                     listener.onClick(this, item, i);
@@ -615,51 +657,25 @@ public class RadialLayout extends View {
     }
 
     private void clickMeDown() {
-        if (currentUserAnimator != null && currentUserAnimator.isStarted())
-            currentUserAnimator.cancel();
+        targetCurrentUserScales.clear();
+        targetCurrentUserScales.add(CLICK_DOWN_SCALE);
 
-        currentUserAnimator = ValueAnimator.ofFloat(currentUserScale, CLICK_DOWN_SCALE);
-        currentUserAnimator.setInterpolator(new DecelerateInterpolator());
-        currentUserAnimator.setDuration(350);
-        currentUserAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                currentUserScale = (float) valueAnimator.getAnimatedValue();
-            }
-        });
-        currentUserAnimator.start();
+        postInvalidate();
     }
 
     private void clickMeUp() {
-        if (currentUserAnimator != null && currentUserAnimator.isStarted())
-            currentUserAnimator.cancel();
+        targetCurrentUserScales.clear();
+        targetCurrentUserScales.add(1f);
 
-        currentUserAnimator = ValueAnimator.ofFloat(currentUserScale, 1);
-        currentUserAnimator.setInterpolator(new DecelerateInterpolator());
-        currentUserAnimator.setDuration(350);
-        currentUserAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                currentUserScale = (float) valueAnimator.getAnimatedValue();
-            }
-        });
-        currentUserAnimator.start();
+        postInvalidate();
     }
 
     private void clickMeBack() {
-        if (currentUserAnimator != null && currentUserAnimator.isStarted())
-            currentUserAnimator.cancel();
+        targetCurrentUserScales.clear();
+        targetCurrentUserScales.add(CLICK_UP_SCALE);
+        targetCurrentUserScales.add(1f);
 
-        currentUserAnimator = ValueAnimator.ofFloat(currentUserScale, CLICK_UP_SCALE, 1);
-        currentUserAnimator.setInterpolator(new DecelerateInterpolator());
-        currentUserAnimator.setDuration(350);
-        currentUserAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                currentUserScale = (float) valueAnimator.getAnimatedValue();
-            }
-        });
-        currentUserAnimator.start();
+        postInvalidate();
     }
 
     public interface MeClickListener {
@@ -687,8 +703,17 @@ public class RadialLayout extends View {
         private int row;
         private double radian;
         private double radianOffset;
-        private ValueAnimator animator;
         private float scale;
+
+        private float drawnRadius;
+        private double drawnRadian;
+        private float drawnScale;
+
+        private float targetRadius;
+        private double targetRadian;
+        private List<Float> targetScales;
+
+        private boolean isRemoving;
 
         /**
          * Creates a new container specifying info such as the size to scale the image
@@ -706,16 +731,18 @@ public class RadialLayout extends View {
             this.size = size;
             this.distance = distance;
             scale = 1;
+
+            targetScales = new ArrayList<>();
+            targetScales.add(1f);
         }
 
         public RadialItem(RadialItem item) {
-            id = item.id;
-            image = item.image;
-            size = item.size;
-            distance = item.distance;
+            this(item.id, item.image, item.size, item.distance);
             radius = item.radius;
             scaledImage = item.scaledImage;
             circleImage = item.circleImage;
+
+            targetRadius = radius;
         }
 
         public String getId() {
@@ -729,11 +756,13 @@ public class RadialLayout extends View {
          * @param radius the required radius of the circle
          */
         private void setRadius(float radius) {
-            if (scaledImage == null || scaledImage.getWidth() != radius * 2 || scaledImage.getHeight() != radius * 2) {
+            int shadowSize = ConversionUtils.dpToPx(SHADOW_SIZE) * 2;
+            if (radius > shadowSize && (scaledImage == null || scaledImage.getWidth() != (radius * 2) - shadowSize || scaledImage.getHeight() != (radius * 2) - shadowSize)) {
                 //Log.d("RadialLayout", "new " + (scaledImage == null ? "scaled bitmap" : "radius"));
-                scaledImage = ThumbnailUtils.extractThumbnail(image, (int) (radius * 2), (int) (radius * 2));
+                scaledImage = ThumbnailUtils.extractThumbnail(image, (int) ((radius * 2) - shadowSize), (int) ((radius * 2) - shadowSize));
             }
             this.radius = radius;
+            targetRadius = radius;
         }
 
         private float getX() {
@@ -747,19 +776,27 @@ public class RadialLayout extends View {
         /**
          * Creates a new circular bitmap if the current one does not match the required dimensions, and returns it.
          *
-         * @param resources the resources of the current context
+         * @param layout the current radial layout
          * @return a circular image bitmap
          */
-        private Bitmap getCircleImage(Resources resources) {
+        private Bitmap getCircleImage(final RadialLayout layout) {
             if (circleImage == null || circleImage.getWidth() != radius * 2 || circleImage.getHeight() != radius * 2) {
+                Log.d("DrawingImage", "drawing");
                 if (scaledImage == null)
                     setRadius(radius);
 
-                RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(resources, scaledImage);
+                int shadowSize = ConversionUtils.dpToPx(SHADOW_SIZE);
+
+                RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(layout.getResources(), scaledImage);
                 roundedBitmapDrawable.setCornerRadius(radius);
                 roundedBitmapDrawable.setAntiAlias(true);
 
-                circleImage = ImageUtils.drawableToBitmap(roundedBitmapDrawable);
+                Bitmap roundedBitmap = ImageUtils.drawableToBitmap(roundedBitmapDrawable);
+                circleImage = Bitmap.createBitmap(roundedBitmap.getWidth() + (shadowSize * 2), roundedBitmap.getHeight() + (shadowSize * 2), Bitmap.Config.ARGB_4444);
+                Canvas canvas = new Canvas(circleImage);
+                canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - shadowSize - 1, layout.shadowPaint);
+                canvas.drawBitmap(roundedBitmap, shadowSize, shadowSize, layout.paint);
+
                 //Log.d("RadialLayout", "new circle");
             }
 
@@ -770,9 +807,13 @@ public class RadialLayout extends View {
          * Creates a Matrix to scale the image to the correct dimensions on a Canvas.
          */
         private Matrix getMatrix(int canvasWidth, int canvasHeight, float offsetX, float offsetY) {
+            drawnRadius = radius;
+            drawnRadian = radian;
+            drawnScale = scale;
+
             float nScale = 0;
             float distance = (float) Math.sqrt(Math.pow(offsetX + getX() + radius, 2) + Math.pow(offsetY + getY() + radius, 2));
-            int totalRadius = Math.min(canvasWidth, canvasHeight) / 2;
+            int totalRadius = (canvasWidth + canvasHeight) / 4;
             if (distance < totalRadius) {
                 nScale = Math.min((float) (Math.sqrt(totalRadius - distance) / Math.sqrt(radius * 2)) * scale, scale);
             }
@@ -783,6 +824,28 @@ public class RadialLayout extends View {
                 matrix.postTranslate((canvasWidth / 2) + offsetX + getX(), (canvasHeight / 2) + offsetY + getY());
                 return matrix;
             } else return null;
+        }
+
+        public boolean needsFrame() {
+            return Math.abs(targetRadius - drawnRadius) > 0.01
+                    || Math.abs(targetRadian - drawnRadian) > 0.001
+                    || (targetScales.size() > 0 && (targetScales.size() > 1 || Math.abs(targetScales.get(0) - drawnScale) > 0.01))
+                    || isRemoving;
+        }
+
+        public void nextFrame(final RadialLayout layout) {
+            radius = (targetRadius + (radius * 5)) / 6;
+            radian = (targetRadian + (radian * 5)) / 6;
+            if (targetScales.size() > 0) {
+                if (targetScales.size() > 1 && Math.abs(scale - targetScales.get(0)) < 0.01)
+                    targetScales.remove(0);
+
+                scale = (targetScales.get(0) + (scale * 5)) / 6;
+                if (scale < 0.02 && isRemoving)
+                    layout.items.remove(this);
+
+            } else if (isRemoving)
+                layout.items.remove(this);
         }
 
         /**
@@ -799,79 +862,40 @@ public class RadialLayout extends View {
             size = item.size;
             distance = item.distance;
 
-            ValueAnimator radiusAnimator = ValueAnimator.ofFloat(radius, item.radius);
-            radiusAnimator.setInterpolator(new DecelerateInterpolator());
-            radiusAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    radius = (float) valueAnimator.getAnimatedValue();
-                }
-            });
-            radiusAnimator.start();
-
-            ValueAnimator radianAnimator = ValueAnimator.ofFloat((float) radian, (float) item.radian);
-            radianAnimator.setInterpolator(new DecelerateInterpolator());
-            radianAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    radian = (float) valueAnimator.getAnimatedValue();
-                }
-            });
-            radianAnimator.start();
-
+            float tempRadius = radius;
             setRadius(item.radius);
-            getCircleImage(layout.getResources());
+            getCircleImage(layout);
+            radius = tempRadius;
+
+            targetRadius = item.radius;
+            targetRadian = item.radian;
+
+            layout.postInvalidate();
         }
 
-        private void clickDown() {
-            if (animator != null && animator.isStarted())
-                animator.cancel();
+        private void clickDown(final RadialLayout layout) {
+            targetScales.clear();
+            targetScales.add(CLICK_DOWN_SCALE);
 
-            animator = ValueAnimator.ofFloat(scale, CLICK_DOWN_SCALE);
-            animator.setInterpolator(new DecelerateInterpolator());
-            animator.setDuration(350);
-            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    scale = (float) valueAnimator.getAnimatedValue();
-                }
-            });
-            animator.start();
+            layout.postInvalidate();
         }
 
-        private void clickUp() {
-            if (animator != null && animator.isStarted())
-                animator.cancel();
+        private void clickUp(final RadialLayout layout) {
+            targetScales.clear();
+            targetScales.add(1f);
 
-            animator = ValueAnimator.ofFloat(scale, 1);
-            animator.setInterpolator(new DecelerateInterpolator());
-            animator.setDuration(350);
-            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    scale = (float) valueAnimator.getAnimatedValue();
-                }
-            });
-            animator.start();
+            layout.postInvalidate();
         }
 
         /**
          * Creates a bouncy scale animation intended for touch feedback.
          */
-        private void clickBack() {
-            if (animator != null && animator.isStarted())
-                animator.cancel();
+        private void clickBack(final RadialLayout layout) {
+            targetScales.clear();
+            targetScales.add(CLICK_UP_SCALE);
+            targetScales.add(1f);
 
-            animator = ValueAnimator.ofFloat(scale, CLICK_UP_SCALE, 1);
-            animator.setInterpolator(new DecelerateInterpolator());
-            animator.setDuration(350);
-            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    scale = (float) valueAnimator.getAnimatedValue();
-                }
-            });
-            animator.start();
+            layout.postInvalidate();
         }
 
         /**
@@ -880,25 +904,11 @@ public class RadialLayout extends View {
          * @param layout the layout to be removed from
          */
         private void removeFrom(final RadialLayout layout) {
-            if (animator != null && animator.isStarted())
-                animator.cancel();
+            targetScales.clear();
+            targetScales.add(0f);
+            isRemoving = true;
 
-            animator = ValueAnimator.ofFloat(scale, 0);
-            animator.setInterpolator(new DecelerateInterpolator());
-            animator.setDuration(200);
-            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    scale = (float) valueAnimator.getAnimatedValue();
-                }
-            });
-            animator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    layout.items.remove(RadialItem.this);
-                }
-            });
-            animator.start();
+            layout.postInvalidate();
         }
 
     }
