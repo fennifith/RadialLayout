@@ -11,11 +11,11 @@ import com.bumptech.glide.request.transition.Transition;
 import java.util.ArrayList;
 import java.util.List;
 
-import james.radiallayout.RadialLayout;
+import james.radiallayout.views.RadialLayoutView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RadialLayout layout;
+    private RadialLayoutView layout;
     private Bitmap resource;
 
     @Override
@@ -29,34 +29,34 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
                 MainActivity.this.resource = resource;
-                List<RadialLayout.RadialItem> items = new ArrayList<>();
+                List<RadialLayoutView.RadialItem> items = new ArrayList<>();
 
                 for (int i = 0; i < 5; i++)
-                    items.add(new RadialLayout.RadialItem("i", resource, (int) (Math.random() * 4), (int) (Math.random() * 4)));
+                    items.add(new RadialLayoutView.RadialItem("i", resource, (int) (Math.random() * 4), (int) (Math.random() * 4)));
 
                 layout.setItems(items);
                 layout.setMeBitmap(resource);
             }
         });
 
-        layout.setClickListener(new RadialLayout.ClickListener() {
+        layout.setClickListener(new RadialLayoutView.ClickListener() {
             @Override
-            public void onClick(RadialLayout layout, RadialLayout.RadialItem item, int index) {
-                List<RadialLayout.RadialItem> items = layout.getItems();
-                items.add(new RadialLayout.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
+            public void onClick(RadialLayoutView layout, RadialLayoutView.RadialItem item, int index) {
+                List<RadialLayoutView.RadialItem> items = layout.getItems();
+                items.add(new RadialLayoutView.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
                 layout.updateItems(items);
             }
         });
 
-        layout.setMeListener(new RadialLayout.MeClickListener() {
+        layout.setCenterListener(new RadialLayoutView.CenterClickListener() {
             @Override
-            public void onMeClick(RadialLayout layout) {
-                List<RadialLayout.RadialItem> items = layout.getItems();
+            public void onCenterClick(RadialLayoutView layout) {
+                List<RadialLayoutView.RadialItem> items = layout.getItems();
                 if (items.size() > 0) {
                     items.remove(items.size() - 1);
                     layout.updateItems(items);
                 } else {
-                    items.add(new RadialLayout.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
+                    items.add(new RadialLayoutView.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
                     layout.updateItems(items);
                 }
             }
