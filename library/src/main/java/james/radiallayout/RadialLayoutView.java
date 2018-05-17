@@ -24,9 +24,6 @@ import java.util.List;
 import james.radiallayout.utils.ConversionUtils;
 import james.radiallayout.utils.RadialUtils;
 
-/**
- * A layout that arranges its items in circles.
- */
 public class RadialLayoutView extends View {
 
     public static final float CLICK_DOWN_SCALE = 0.8f;
@@ -85,8 +82,8 @@ public class RadialLayoutView extends View {
     private List<Float> targetCurrentUserScales;
     private int currentUserRadius = 48;
 
-    private float shadowRadius = 4;
-    private float shadowOffset = 2;
+    private float shadowRadius = 0;
+    private float shadowOffset = 0;
     private int shadowColor = Color.argb(100, 0, 0, 0);
     private float itemRadius;
     private float itemSeparation;

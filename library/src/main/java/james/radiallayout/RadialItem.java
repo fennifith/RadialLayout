@@ -132,10 +132,12 @@ public class RadialItem {
             roundedBitmapDrawable.setAntiAlias(true);
 
             Bitmap roundedBitmap = ImageUtils.drawableToBitmap(roundedBitmapDrawable);
-            circleImage = Bitmap.createBitmap(roundedBitmap.getWidth() + (shadowSize * 2), roundedBitmap.getHeight() + (shadowSize * 2), Bitmap.Config.ARGB_4444);
-            Canvas canvas = new Canvas(circleImage);
-            canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - shadowSize - 1, layout.getShadowPaint());
-            canvas.drawBitmap(roundedBitmap, shadowSize, shadowSize, layout.getPaint());
+            if (shadowSizeDp > 0) {
+                circleImage = Bitmap.createBitmap(roundedBitmap.getWidth() + (shadowSize * 2), roundedBitmap.getHeight() + (shadowSize * 2), Bitmap.Config.ARGB_4444);
+                Canvas canvas = new Canvas(circleImage);
+                canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - shadowSize - 1, layout.getShadowPaint());
+                canvas.drawBitmap(roundedBitmap, shadowSize, shadowSize, layout.getPaint());
+            } else circleImage = roundedBitmap;
 
             //Log.d("RadialLayout", "new circle");
         }
