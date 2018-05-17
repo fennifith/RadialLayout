@@ -11,7 +11,8 @@ import com.bumptech.glide.request.transition.Transition;
 import java.util.ArrayList;
 import java.util.List;
 
-import james.radiallayout.views.RadialLayoutView;
+import james.radiallayout.RadialItem;
+import james.radiallayout.RadialLayoutView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,35 +30,35 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
                 MainActivity.this.resource = resource;
-                List<RadialLayoutView.RadialItem> items = new ArrayList<>();
+                List<RadialItem> items = new ArrayList<>();
 
                 for (int i = 0; i < 5; i++)
-                    items.add(new RadialLayoutView.RadialItem("i", resource, (int) (Math.random() * 4), (int) (Math.random() * 4)));
+                    items.add(new RadialItem("i", resource, (int) (Math.random() * 4), (int) (Math.random() * 4)));
 
-                layout.setItems(items);
-                layout.setMeBitmap(resource);
+                layout.setItems(items).apply();
+                layout.setCenterBitmap(resource);
             }
         });
 
         layout.setClickListener(new RadialLayoutView.ClickListener() {
             @Override
-            public void onClick(RadialLayoutView layout, RadialLayoutView.RadialItem item, int index) {
-                List<RadialLayoutView.RadialItem> items = layout.getItems();
-                items.add(new RadialLayoutView.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
-                layout.updateItems(items);
+            public void onClick(RadialLayoutView layout, RadialItem item, int index) {
+                List<RadialItem> items = layout.getItems();
+                items.add(new RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
+                layout.updateItems(items).apply();
             }
         });
 
         layout.setCenterListener(new RadialLayoutView.CenterClickListener() {
             @Override
             public void onCenterClick(RadialLayoutView layout) {
-                List<RadialLayoutView.RadialItem> items = layout.getItems();
+                List<RadialItem> items = layout.getItems();
                 if (items.size() > 0) {
                     items.remove(items.size() - 1);
-                    layout.updateItems(items);
+                    layout.updateItems(items).apply();
                 } else {
-                    items.add(new RadialLayoutView.RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
-                    layout.updateItems(items);
+                    items.add(new RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
+                    layout.updateItems(items).apply();
                 }
             }
         });

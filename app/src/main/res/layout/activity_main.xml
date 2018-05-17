@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <james.radiallayout.views.RadialLayoutView
+    <james.radiallayout.RadialLayoutView
         android:id="@+id/radialLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
