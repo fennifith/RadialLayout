@@ -3,6 +3,8 @@ package james.radiallayoutsample;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
@@ -60,6 +62,16 @@ public class MainActivity extends AppCompatActivity {
                     items.add(new RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
                     layout.updateItems(items).apply();
                 }
+            }
+        });
+
+        ((CheckBox) findViewById(R.id.shadows)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                layout.setItems(layout.getItems())
+                        .withShadowRadius(b ? 4 : 0)
+                        .withShadowOffset(b ? 2 : 0)
+                        .apply();
             }
         });
     }

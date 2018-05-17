@@ -82,11 +82,11 @@ public class RadialLayoutView extends View {
     private List<Float> targetCurrentUserScales;
     private int currentUserRadius = 48;
 
+    private float itemRadius = 36;
+    private float itemSeparation = 8;
     private float shadowRadius = 0;
     private float shadowOffset = 0;
     private int shadowColor = Color.argb(100, 0, 0, 0);
-    private float itemRadius;
-    private float itemSeparation;
 
     /**
      * true once the view has been drawn - will invalidate continuously until then as an alternative to a ViewTreeObserver
@@ -140,6 +140,12 @@ public class RadialLayoutView extends View {
 
     public Paint getShadowPaint() {
         return shadowPaint;
+    }
+
+    public void setShadowColor(int shadowColor) {
+        this.shadowColor = shadowColor;
+        shadowPaint.setShadowLayer(ConversionUtils.dpToPx(shadowRadius), 0, ConversionUtils.dpToPx(shadowOffset), shadowColor);
+        postInvalidate();
     }
 
     public void setCenterBitmap(Bitmap bitmap) {
@@ -426,24 +432,42 @@ public class RadialLayoutView extends View {
 
         private RadialLayoutView view;
         private List<RadialItem> items;
-        private int itemRadius = 36;
-        private int itemSeparation = 8;
+
+        private float itemRadius;
+        private float itemSeparation;
+        private float shadowRadius;
+        private float shadowOffset;
+
         private OnAppliedListener listener;
         private boolean isFirstTime;
 
         private Builder(RadialLayoutView view, List<RadialItem> items, boolean isFirstTime) {
             this.view = view;
             this.items = items;
+            itemRadius = view.itemRadius;
+            itemSeparation = view.itemSeparation;
+            shadowRadius = view.shadowRadius;
+            shadowOffset = view.shadowOffset;
             this.isFirstTime = isFirstTime;
         }
 
-        public Builder withItemRadius(int radius) {
+        public Builder withItemRadius(float radius) {
             itemRadius = radius;
             return this;
         }
 
-        public Builder withItemSeparation(int separation) {
+        public Builder withItemSeparation(float separation) {
             itemSeparation = separation;
+            return this;
+        }
+
+        public Builder withShadowRadius(float radius) {
+            shadowRadius = radius;
+            return this;
+        }
+
+        public Builder withShadowOffset(float offset) {
+            shadowOffset = offset;
             return this;
         }
 
@@ -485,7 +509,6 @@ public class RadialLayoutView extends View {
             else {
                 for (RadialItem item : Builder.this.items)
                     items.add(new RadialItem(item));
-                ;
             }
 
             Collections.sort(items, new Comparator<RadialItem>() {
@@ -498,7 +521,7 @@ public class RadialLayoutView extends View {
             for (int i = 0; i < items.size(); i++) {
                 int radius = ConversionUtils.dpToPx((itemRadius - 12) + (12 * ((float) i / items.size())));
                 //Log.d("Radial", "Item: " + i + ", Size: " + items.get(i).size + ", Radius: " + radius);
-                items.get(i).setRadius(radius, view.shadowRadius + view.shadowOffset);
+                items.get(i).setRadius(radius, shadowRadius + shadowOffset);
             }
 
             Collections.sort(items, new Comparator<RadialItem>() {
@@ -585,7 +608,7 @@ public class RadialLayoutView extends View {
                     item.itemSeparation = itemSeparation;
 
                     if (i < view.items.size())
-                        view.items.get(i).animateTo(item, view, view.shadowRadius + view.shadowOffset);
+                        view.items.get(i).animateTo(item, view, shadowRadius + shadowOffset);
                     else {
                         view.items.add(item);
                         item.scale = 0;
@@ -612,6 +635,9 @@ public class RadialLayoutView extends View {
 
             view.itemRadius = itemRadius;
             view.itemSeparation = itemSeparation;
+            view.shadowRadius = shadowRadius;
+            view.shadowOffset = shadowOffset;
+            view.shadowPaint.setShadowLayer(ConversionUtils.dpToPx(shadowRadius), 0, ConversionUtils.dpToPx(shadowOffset), view.shadowColor);
             view.postInvalidate();
 
             if (listener != null)

@@ -6,7 +6,6 @@ import android.graphics.Matrix;
 import android.media.ThumbnailUtils;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,24 +118,23 @@ public class RadialItem {
      * @param layout the current radial layout
      * @return a circular image bitmap
      */
-    Bitmap getCircleImage(final RadialLayoutView layout, float shadowSizeDp) {
+    Bitmap getCircleImage(final RadialLayoutView layout, float shadowRadiusDp) {
         if (circleImage == null || circleImage.getWidth() != radius * 2 || circleImage.getHeight() != radius * 2) {
-            Log.d("DrawingImage", "drawing");
             if (scaledImage == null)
-                setRadius(radius, shadowSizeDp);
+                setRadius(radius, shadowRadiusDp);
 
-            int shadowSize = ConversionUtils.dpToPx(shadowSizeDp);
+            int shadowRadius = ConversionUtils.dpToPx(shadowRadiusDp);
 
             RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(layout.getResources(), scaledImage);
             roundedBitmapDrawable.setCornerRadius(radius);
             roundedBitmapDrawable.setAntiAlias(true);
 
             Bitmap roundedBitmap = ImageUtils.drawableToBitmap(roundedBitmapDrawable);
-            if (shadowSizeDp > 0) {
-                circleImage = Bitmap.createBitmap(roundedBitmap.getWidth() + (shadowSize * 2), roundedBitmap.getHeight() + (shadowSize * 2), Bitmap.Config.ARGB_4444);
+            if (shadowRadius > 0) {
+                circleImage = Bitmap.createBitmap(roundedBitmap.getWidth() + (shadowRadius * 2), roundedBitmap.getHeight() + (shadowRadius * 2), Bitmap.Config.ARGB_4444);
                 Canvas canvas = new Canvas(circleImage);
-                canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - shadowSize - 1, layout.getShadowPaint());
-                canvas.drawBitmap(roundedBitmap, shadowSize, shadowSize, layout.getPaint());
+                canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - shadowRadius - 1, layout.getShadowPaint());
+                canvas.drawBitmap(roundedBitmap, shadowRadius, shadowRadius, layout.getPaint());
             } else circleImage = roundedBitmap;
 
             //Log.d("RadialLayout", "new circle");
@@ -195,8 +193,9 @@ public class RadialItem {
      *
      * @param item   the item to animate to the position of
      * @param layout the layout to be animated in
+     * @param shadowRadius the radius (in dp) of the shadow to be drawn
      */
-    void animateTo(RadialItem item, final RadialLayoutView layout, float shadowSizeDp) {
+    void animateTo(RadialItem item, final RadialLayoutView layout, float shadowRadius) {
         image = item.image;
         scaledImage = item.scaledImage;
         circleImage = item.circleImage;
@@ -205,8 +204,8 @@ public class RadialItem {
         distance = item.distance;
 
         float tempRadius = radius;
-        setRadius(item.radius, shadowSizeDp);
-        getCircleImage(layout, shadowSizeDp);
+        setRadius(item.radius, shadowRadius);
+        getCircleImage(layout, shadowRadius);
         radius = tempRadius;
 
         targetRadius = item.radius;
