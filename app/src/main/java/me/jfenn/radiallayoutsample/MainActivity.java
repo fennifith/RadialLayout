@@ -48,16 +48,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        layout.setClickListener(new RadialLayoutView.ClickListener() {
+        layout.setOnItemClickListener(new RadialLayoutView.OnItemClickListener() {
             @Override
-            public void onClick(RadialLayoutView layout, BaseRadialItem item, int index) {
+            public void onItemClick(RadialLayoutView layout, BaseRadialItem item, int index) {
                 List<BaseRadialItem> items = layout.getItems();
                 items.add(new RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
                 layout.updateItems(items).apply();
             }
         });
 
-        layout.setCenterListener(new RadialLayoutView.CenterClickListener() {
+        layout.setOnCenterClickListener(new RadialLayoutView.OnCenterClickListener() {
             @Override
             public void onCenterClick(RadialLayoutView layout) {
                 List<BaseRadialItem> items = layout.getItems();

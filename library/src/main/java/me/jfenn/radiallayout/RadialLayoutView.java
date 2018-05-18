@@ -90,8 +90,8 @@ public class RadialLayoutView extends View {
      */
     private boolean isFirstDrawn;
 
-    private CenterClickListener centerListener;
-    private ClickListener listener;
+    private OnCenterClickListener centerListener;
+    private OnItemClickListener listener;
 
     public RadialLayoutView(@NonNull Context context) {
         this(context, null);
@@ -171,14 +171,14 @@ public class RadialLayoutView extends View {
     /**
      * Listen for the center item being pressed.
      */
-    public void setCenterListener(@Nullable CenterClickListener listener) {
+    public void setOnCenterClickListener(@Nullable OnCenterClickListener listener) {
         centerListener = listener;
     }
 
     /**
      * Listen for any other item being pressed.
      */
-    public void setClickListener(@Nullable ClickListener listener) {
+    public void setOnItemClickListener(@Nullable OnItemClickListener listener) {
         this.listener = listener;
     }
 
@@ -395,7 +395,7 @@ public class RadialLayoutView extends View {
                                 item.clickBack(this);
 
                                 if (listener != null)
-                                    listener.onClick(this, item, i);
+                                    listener.onItemClick(this, item, i);
 
                                 break;
                             }
@@ -435,12 +435,12 @@ public class RadialLayoutView extends View {
         postInvalidate();
     }
 
-    public interface CenterClickListener {
+    public interface OnCenterClickListener {
         void onCenterClick(RadialLayoutView layout);
     }
 
-    public interface ClickListener {
-        void onClick(RadialLayoutView layout, BaseRadialItem item, int index);
+    public interface OnItemClickListener {
+        void onItemClick(RadialLayoutView layout, BaseRadialItem item, int index);
     }
 
     public static class Builder {
