@@ -1,4 +1,4 @@
-package james.radiallayout;
+package me.jfenn.radiallayout;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -6,8 +6,8 @@ import android.media.ThumbnailUtils;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 
-import james.radiallayout.utils.ConversionUtils;
-import james.radiallayout.utils.ImageUtils;
+import me.jfenn.radiallayout.utils.ConversionUtils;
+import me.jfenn.radiallayout.utils.ImageUtils;
 
 /**
  * A view container specifying info such as the size to scale the image

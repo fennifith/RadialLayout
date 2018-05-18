@@ -1,4 +1,4 @@
-package james.radiallayout;
+package me.jfenn.radiallayout;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import james.radiallayout.utils.ConversionUtils;
-import james.radiallayout.utils.RadialUtils;
+import me.jfenn.radiallayout.utils.ConversionUtils;
+import me.jfenn.radiallayout.utils.RadialUtils;
 
 public class RadialLayoutView extends View {
 

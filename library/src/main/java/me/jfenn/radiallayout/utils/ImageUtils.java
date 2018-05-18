@@ -1,4 +1,4 @@
-package james.radiallayout.utils;
+package me.jfenn.radiallayout.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

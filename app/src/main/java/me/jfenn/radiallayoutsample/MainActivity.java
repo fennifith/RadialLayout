@@ -1,4 +1,4 @@
-package james.radiallayoutsample;
+package me.jfenn.radiallayoutsample;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -14,10 +14,10 @@ import com.bumptech.glide.request.transition.Transition;
 import java.util.ArrayList;
 import java.util.List;
 
-import james.radiallayout.BaseRadialItem;
-import james.radiallayout.CenteredRadialItem;
-import james.radiallayout.RadialItem;
-import james.radiallayout.RadialLayoutView;
+import me.jfenn.radiallayout.BaseRadialItem;
+import me.jfenn.radiallayout.CenteredRadialItem;
+import me.jfenn.radiallayout.RadialItem;
+import me.jfenn.radiallayout.RadialLayoutView;
 
 public class MainActivity extends AppCompatActivity {
 

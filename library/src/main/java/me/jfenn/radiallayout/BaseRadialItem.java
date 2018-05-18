@@ -1,4 +1,4 @@
-package james.radiallayout;
+package me.jfenn.radiallayout;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -6,7 +6,7 @@ import android.graphics.Matrix;
 import java.util.ArrayList;
 import java.util.List;
 
-import james.radiallayout.utils.RadialUtils;
+import me.jfenn.radiallayout.utils.RadialUtils;
 
 /**
  * A view container specifying info such as the size to scale the image
