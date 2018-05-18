@@ -247,7 +247,7 @@ public class RadialLayoutView extends View {
 
             for (int i = 0; i < items.size(); i++) {
                 BaseRadialItem item = items.get(i);
-                Matrix matrix = item.getMatrix(canvas.getWidth(), canvas.getHeight(), offsetX, offsetY);
+                Matrix matrix = item.getMatrix(canvas.getWidth(), canvas.getHeight(), offsetX - (shadowOffset + shadowRadius), offsetY - (shadowOffset + shadowRadius));
                 if (matrix != null)
                     canvas.drawBitmap(item.getCircleImage(this, shadowRadius + shadowOffset), matrix, paint);
 

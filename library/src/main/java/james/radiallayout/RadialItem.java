@@ -43,7 +43,7 @@ public class RadialItem extends BaseRadialItem {
 
     @Override
     Bitmap getCircleImage(RadialLayoutView layout, float shadowRadiusDp) {
-        if (circleImage == null || circleImage.getWidth() != radius * 2 || circleImage.getHeight() != radius * 2) {
+        if (circleImage == null || circleImage.getWidth() != (int) (radius * 2) || circleImage.getHeight() != (int) (radius * 2)) {
             if (scaledImage == null)
                 setRadius(radius, shadowRadiusDp);
 
