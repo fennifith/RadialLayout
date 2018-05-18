@@ -497,6 +497,11 @@ public class RadialLayoutView extends View {
                     item.setRadius(radius, shadowRadius + shadowOffset);
                 else if (item.radius <= 0) //only update radius for new items, reduces memory usage & makes transition smoother
                     item.radius = radius;
+
+                if (shadowRadius != view.shadowRadius || shadowOffset != view.shadowOffset) {
+                    item.scaledImage = null;
+                    item.circleImage = null;
+                }
             }
 
             Collections.sort(items, new Comparator<BaseRadialItem>() {

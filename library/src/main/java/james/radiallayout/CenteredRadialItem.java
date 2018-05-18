@@ -63,7 +63,7 @@ public class CenteredRadialItem extends BaseRadialItem {
                 setRadius(radius, shadowRadiusDp);
 
             int outlineWeight = ConversionUtils.dpToPx(this.outlineWeight);
-            int extraRadius = ConversionUtils.dpToPx(shadowRadiusDp) + ConversionUtils.dpToPx(this.outlineRadius) + outlineWeight;
+            int extraRadius = ConversionUtils.dpToPx(this.outlineRadius) + outlineWeight;
 
             RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(layout.getResources(), scaledImage);
             roundedBitmapDrawable.setCornerRadius(radius);
