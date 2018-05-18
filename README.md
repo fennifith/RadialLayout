@@ -2,7 +2,9 @@ RadialLayout is a scrollable-ish view that arranges images in circles extending 
 
 ## Screenshots
 
-There are no screenshots. Yet. I still have to make some.
+|With Shadows|Without Shadows|GIF (pronounced "jeff")|
+|-----|-----|-----|
+|![img](https://jfenn.me/images/screenshots/RadialLayout-Shadows.png)|![img](https://jfenn.me/images/screenshots/RadialLayout-Main.png)|![img](https://jfenn.me/images/screenshots/RadialLayout-Jif.gif)|
 
 ## Usage
 
@@ -37,15 +39,15 @@ This method accepts a `CenteredRadialItem`. This class does not properly impleme
 
 ```java
 CenterItem item = new CenteredRadialItem(
-    bitmap, /* the image to display - will be resized to fit inside the item appropriately */
-    72 /* the diameter of the center item, in dp */
+    bitmap, // the image to display - will be resized to fit inside the item appropriately
+    72      // the diameter of the center item, in dp
 );
 
 // (optional), draws an outline around the item
 item.setOutline(
-    3, /* the thickness (dp) of the outline */
-    4, /* the distance (dp) between the edge of the image and the outline */
-    Color.BLACK /* the color of the outline */
+    3,          // the thickness (dp) of the outline
+    4,          // the distance (dp) between the edge of the image and the outline
+    Color.BLACK // the color of the outline
 );
 
 radialLayout.setCenterItem(item);
@@ -61,10 +63,10 @@ Both `setItems` and `updateItems` accept a list of `BaseRadialItem`s and is inte
 
 ```java
 RadialItem item = new RadialItem(
-    "item-5", /* The id of the item, used for comparisons when updateItems is called */
-    image, /* the image to display - will be resized to fit inside the item appropriately */
-    1, /* the size of the item, relative to other items in the view */
-    5 /* the distance of the item from the center, relative to other items in the view */
+    "item-5",   // The id of the item, used for comparisons when updateItems is called
+    image,      // the image to display - will be resized to fit inside the item appropriately
+    1,          // the size of the item, relative to other items in the view
+    5           // the distance of the item from the center, relative to other items in the view
 );
 ```
 
@@ -72,16 +74,56 @@ Both of the methods return a `RadialLayoutView.Builder` that allows you to speci
 
 ```java
 radialLayout.setItems(items)
-  .withItemRadius(36 /* the average radius of the views, in dp, +/- the variation (next line) */)
-  .withItemRadiusVariation(6 /* how much (in dp) the radius of the views should vary according to the 'size' attribute of the items */)
-  .withItemSeparation(8 /* the minimum distance between items in the view, in dp */)
-  .withShadowRadius(4 /* the radius of the shadow to draw behind the view (dp) */)
-  .withShadowOffset(2 /* the vertical offset of the shadow (dp) */)
+  .withItemRadius(36)           // the average radius of the views, in dp, +/- the variation (next line)
+  .withItemRadiusVariation(6)   // how much (in dp) the radius of the views should vary according to the 'size' attribute of the items
+  .withItemSeparation(8)        // the minimum distance between items in the view, in dp
+  .withShadowRadius(4)          // the radius of the shadow to draw behind the view (dp)
+  .withShadowOffset(2)          // the vertical offset of the shadow (dp)
   .apply();
 ```
 
 The items in the view will not be applied instantly, as their positions are calculated in a background thread. To be notified when they are applied, you can pass a `RadialLayout.Builder.OnAppliedListener` to the `apply()` method, or call `applySynchronous()` in a background thread of your own.
 
+Keep in mind that when a shadow radius and offset are specified, performance of the view will drop significantly for no apparent reason. I have not found a solution to this. See issue [#1](../../issues/1).
+
 ### Configuration
 
-I'm lazy. I'll add this later.
+#### Listening for Click Events
+
+This is pretty straightforward.
+
+```java
+radialLayout.setOnItemClickListener(new RadialLayoutView.OnItemClickListener() {
+    @Override
+    public void onItemClick(
+            RadialLayoutView layout,    // the layout that the click event is from
+            BaseRadialItem item,        // the item that was clicked
+            int index                   // the index of the item that was clicked in the array
+    ) {
+        // do something
+        
+        // perhaps the easiest way to detect which item corresponds to what is by using the id argument
+        // in the constructor for something other than making sure the lists are merged properly?
+        
+        // hint: item.getId();
+    }
+});
+
+// and, for the center item...
+
+radialLayout.setOnCenterClickListener(new RadialLayoutView.OnCenterClickListener() {
+    @Override
+    public void onCenterClick(RadialLayoutView layout /* the layout that the click event is from */) {
+        // do something
+    }
+});
+```
+
+#### Paint
+
+If for some reason you feel like it, there are also two methods in RadialLayoutView that return the paint used for shadows and images that you can use to modify... things.
+
+```java
+Paint imagePaint = radialLayout.getPaint();
+Paint shadowPaint = radialLayout.getShadowPaint();
+```
