@@ -413,6 +413,7 @@ public class RadialLayoutView extends View {
         private List<BaseRadialItem> items;
 
         private float itemRadius;
+        private float itemRadiusVariation;
         private float itemSeparation;
         private float shadowRadius;
         private float shadowOffset;
@@ -424,6 +425,7 @@ public class RadialLayoutView extends View {
             this.view = view;
             this.items = items;
             itemRadius = view.itemRadius;
+            itemRadiusVariation = 6;
             itemSeparation = view.itemSeparation;
             shadowRadius = view.shadowRadius;
             shadowOffset = view.shadowOffset;
@@ -432,6 +434,11 @@ public class RadialLayoutView extends View {
 
         public Builder withItemRadius(float radius) {
             itemRadius = radius;
+            return this;
+        }
+
+        public Builder withItemRadiusVariation(float variation) {
+            itemRadiusVariation = variation;
             return this;
         }
 
@@ -498,7 +505,7 @@ public class RadialLayoutView extends View {
             });
 
             for (int i = 0; i < items.size(); i++) {
-                int radius = ConversionUtils.dpToPx((itemRadius - 12) + (12 * ((float) i / items.size())));
+                int radius = ConversionUtils.dpToPx((itemRadius - (itemRadiusVariation * 2)) + (itemRadiusVariation * 2 * ((float) i / items.size())));
                 //Log.d("Radial", "Item: " + i + ", Size: " + items.get(i).size + ", Radius: " + radius);
                 BaseRadialItem item = items.get(i);
                 if (isFirstTime)
