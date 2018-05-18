@@ -1,4 +1,4 @@
-RadialLayout is a scrollable-ish view that arranges images in circles extending from the center of the screen. For demonstration and experimentation, an apk of the sample project can be downloaded [here](../../releases).
+RadialLayout is a scrollable-ish view that arranges images in circles extending from the center of the screen that was originally made for [Lemonade](https://lemonade.social). For demonstration and experimentation, an apk of the sample project can be downloaded [here](../../releases).
 
 ## Screenshots
 
