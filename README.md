@@ -25,7 +25,7 @@ You can add the view into any layout like this:
     android:layout_height="match_parent"/>
 ```
 
-There are not currently any XML attributes that can be used configure the view because of the way that this project is designed.
+There are not currently any XML attributes that can be used configure the view because of the way that this project is designed. Feel free to create an issue if there are any that you want. I can't think of any.
 
 ### Items
 
@@ -36,10 +36,19 @@ There are three methods to modify the items of the view: `setCenterItem`, `setIt
 This method accepts a `CenteredRadialItem`. This class does not properly implement of the functionality of the `BaseRadialItem` subclass, and as such should not be passed to `setItems` or `updateItems`. It can be constructed and applied to the view as follows:
 
 ```java
-radialLayout.setCenterItem(new CenteredRadialItem(
+CenterItem item = new CenteredRadialItem(
     bitmap, /* the image to display - will be resized to fit inside the item appropriately */
     72 /* the diameter of the center item, in dp */
-));
+);
+
+// (optional), draws an outline around the item
+item.setOutline(
+    3, /* the thickness (dp) of the outline */
+    4, /* the distance (dp) between the edge of the image and the outline */
+    Color.BLACK /* the color of the outline */
+);
+
+radialLayout.setCenterItem(item);
 ```
 
 This method can be called at any time, and will not affect any of the functionality of the rest of the class.
