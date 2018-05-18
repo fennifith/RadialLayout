@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.os.Handler;
 import android.support.annotation.AttrRes;
+import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -121,15 +122,26 @@ public class RadialLayoutView extends View {
         targetCurrentUserScales = new ArrayList<>();
     }
 
+    /**
+     * @return the Paint used to draw images of the items in the view
+     */
     public Paint getPaint() {
         return paint;
     }
 
+    /**
+     * @return the Paint used to draw the shadows of items in the view
+     */
     public Paint getShadowPaint() {
         return shadowPaint;
     }
 
-    public void setShadowColor(int shadowColor) {
+    /**
+     * Sets the color of the shadow of all items in the view
+     *
+     * @param shadowColor a color int
+     */
+    public void setShadowColor(@ColorInt int shadowColor) {
         this.shadowColor = shadowColor;
         shadowPaint.setShadowLayer(ConversionUtils.dpToPx(shadowRadius), 0, ConversionUtils.dpToPx(shadowOffset), shadowColor);
 
@@ -143,7 +155,12 @@ public class RadialLayoutView extends View {
         postInvalidate();
     }
 
-    public void setCenterItem(CenteredRadialItem item) {
+    /**
+     * Set the item to be displayed in the center of the view.
+     *
+     * @param item the item to be displayed in the center of the view
+     */
+    public void setCenterItem(@Nullable CenteredRadialItem item) {
         centerItem = item;
         centerItem.scale = 0;
         centerItem.setRadius(ConversionUtils.dpToPx(centerItem.size) / 2, shadowRadius + shadowOffset);
@@ -151,14 +168,25 @@ public class RadialLayoutView extends View {
         postInvalidate();
     }
 
+    /**
+     * Listen for the center item being pressed.
+     */
     public void setCenterListener(@Nullable CenterClickListener listener) {
         centerListener = listener;
     }
 
+    /**
+     * Listen for any other item being pressed.
+     */
     public void setClickListener(@Nullable ClickListener listener) {
         this.listener = listener;
     }
 
+    /**
+     * Get all the items being displayed in the view.
+     *
+     * @return a list of the items being displayed in the view
+     */
     public List<BaseRadialItem> getItems() {
         return new ArrayList<>(items);
     }
@@ -167,7 +195,8 @@ public class RadialLayoutView extends View {
      * This method returns a builder to help set up the necessary parameters
      * for calculating item positions.
      *
-     * @param items the items to add
+     * @param items the new list of items to display
+     * @return a builder to help set up the necessary parameters for calculating item positions
      */
     public Builder setItems(List<BaseRadialItem> items) {
         this.items = items;
@@ -181,6 +210,13 @@ public class RadialLayoutView extends View {
         return new Builder(this, items, true);
     }
 
+    /**
+     * This method returns a builder to help set up the necessary parameters for calculating
+     * new item positions.
+     *
+     * @param items the modified list of items to display
+     * @return a builder to help set up the necessary parameters for calculating item positions
+     */
     public Builder updateItems(final List<BaseRadialItem> items) {
         if (!isReady)
             throw new EmptyListException("Cannot update items before they are set.");

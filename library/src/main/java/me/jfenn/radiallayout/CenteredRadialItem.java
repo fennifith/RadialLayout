@@ -33,6 +33,13 @@ public class CenteredRadialItem extends BaseRadialItem {
         setOutline(item.outlineWeight, item.outlineRadius, item.outlinePaint.getColor());
     }
 
+    /**
+     * Set the weight, radius, and color of the outline.
+     *
+     * @param weight the thickness (dp) of the outline
+     * @param radius the distance (dp) between the edge of the image and the outline
+     * @param color  the color of the outline
+     */
     public void setOutline(int weight, int radius, int color) {
         outlineWeight = weight;
         outlineRadius = radius;

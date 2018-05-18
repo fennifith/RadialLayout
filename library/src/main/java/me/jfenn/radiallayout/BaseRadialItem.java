@@ -136,6 +136,11 @@ public abstract class BaseRadialItem {
         } else return null;
     }
 
+    /**
+     * Determines whether calling nextFrame() will result in any different values or not.
+     *
+     * @return whether calling nextFrame() will result in any different values
+     */
     boolean needsFrame() {
         return Math.abs(targetRadius - drawnRadius) > 0.01
                 || Math.abs(targetRadian - drawnRadian) > 0.001
@@ -143,6 +148,11 @@ public abstract class BaseRadialItem {
                 || isRemoving;
     }
 
+    /**
+     * Updates values to display the next frame of the item.
+     *
+     * @param layout the view that the item is to be displayed in
+     */
     void nextFrame(final RadialLayoutView layout) {
         radius = (targetRadius + (radius * 5)) / 6;
         radian = (targetRadian + (radian * 5)) / 6;
@@ -184,6 +194,11 @@ public abstract class BaseRadialItem {
         layout.postInvalidate();
     }
 
+    /**
+     * Creates a bouncy scale animation intended for touch feedback.
+     *
+     * @param layout the view that the item is to be displayed in
+     */
     void clickDown(final RadialLayoutView layout) {
         targetScales.clear();
         targetScales.add(RadialLayoutView.CLICK_DOWN_SCALE);
@@ -191,6 +206,11 @@ public abstract class BaseRadialItem {
         layout.postInvalidate();
     }
 
+    /**
+     * Creates a bouncy scale animation intended for touch feedback.
+     *
+     * @param layout the view that the item is to be displayed in
+     */
     void clickUp(final RadialLayoutView layout) {
         targetScales.clear();
         targetScales.add(1f);
@@ -200,6 +220,8 @@ public abstract class BaseRadialItem {
 
     /**
      * Creates a bouncy scale animation intended for touch feedback.
+     *
+     * @param layout the view that the item is to be displayed in
      */
     void clickBack(final RadialLayoutView layout) {
         targetScales.clear();
