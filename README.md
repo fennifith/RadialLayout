@@ -4,7 +4,7 @@ RadialLayout is a scrollable-ish view that arranges images in circles extending 
 
 |With Shadows|Without Shadows|GIF (pronounced "jeff")|
 |-----|-----|-----|
-|![img](https://jfenn.me/images/screenshots/RadialLayout-Shadows.png)|![img](https://jfenn.me/images/screenshots/RadialLayout-Main.png)|![img](https://jfenn.me/images/screenshots/RadialLayout-Jif.gif)|
+|<img src="/images/shadows.png?raw=true">|<img src="/images/noshadows.png?raw=true">|<img src="/images/jeff.gif?raw=true">|
 
 ## Usage
 
