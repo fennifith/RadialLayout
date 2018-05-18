@@ -2,6 +2,7 @@ package james.radiallayoutsample;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -13,6 +14,8 @@ import com.bumptech.glide.request.transition.Transition;
 import java.util.ArrayList;
 import java.util.List;
 
+import james.radiallayout.BaseRadialItem;
+import james.radiallayout.CenteredRadialItem;
 import james.radiallayout.RadialItem;
 import james.radiallayout.RadialLayoutView;
 
@@ -32,20 +35,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
                 MainActivity.this.resource = resource;
-                List<RadialItem> items = new ArrayList<>();
+                List<BaseRadialItem> items = new ArrayList<>();
 
                 for (int i = 0; i < 5; i++)
                     items.add(new RadialItem("i", resource, (int) (Math.random() * 4), (int) (Math.random() * 4)));
 
                 layout.setItems(items).apply();
-                layout.setCenterBitmap(resource);
+
+                CenteredRadialItem centerItem = new CenteredRadialItem(resource, 64);
+                centerItem.setOutline(3, 6, ContextCompat.getColor(MainActivity.this, R.color.colorAccent));
+                layout.setCenterItem(centerItem);
             }
         });
 
         layout.setClickListener(new RadialLayoutView.ClickListener() {
             @Override
-            public void onClick(RadialLayoutView layout, RadialItem item, int index) {
-                List<RadialItem> items = layout.getItems();
+            public void onClick(RadialLayoutView layout, BaseRadialItem item, int index) {
+                List<BaseRadialItem> items = layout.getItems();
                 items.add(new RadialItem("h", resource, (int) (Math.random() * 5) + 1, items.size() + 8));
                 layout.updateItems(items).apply();
             }
@@ -54,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         layout.setCenterListener(new RadialLayoutView.CenterClickListener() {
             @Override
             public void onCenterClick(RadialLayoutView layout) {
-                List<RadialItem> items = layout.getItems();
+                List<BaseRadialItem> items = layout.getItems();
                 if (items.size() > 0) {
                     items.remove(items.size() - 1);
                     layout.updateItems(items).apply();

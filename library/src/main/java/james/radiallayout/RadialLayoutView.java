@@ -1,7 +1,6 @@
 package james.radiallayout;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -30,9 +29,8 @@ public class RadialLayoutView extends View {
     public static final float CLICK_UP_SCALE = 1.07f;
 
     private Paint paint;
-    private Paint outlinePaint;
     private Paint shadowPaint;
-    List<RadialItem> items;
+    List<BaseRadialItem> items;
     private boolean isReady;
 
     private boolean isScrolling;
@@ -77,10 +75,8 @@ public class RadialLayoutView extends View {
         }
     };
 
-    private Bitmap currentUser;
-    private float currentUserScale;
+    private CenteredRadialItem centerItem;
     private List<Float> targetCurrentUserScales;
-    private int currentUserRadius = 48;
 
     private float itemRadius = 36;
     private float itemSeparation = 8;
@@ -112,11 +108,6 @@ public class RadialLayoutView extends View {
         paint.setFilterBitmap(true);
         paint.setDither(true);
 
-        outlinePaint = new Paint();
-        outlinePaint.setAntiAlias(true);
-        outlinePaint.setStyle(Paint.Style.STROKE);
-        outlinePaint.setStrokeWidth(ConversionUtils.dpToPx(3));
-
         shadowPaint = new Paint();
         shadowPaint.setAntiAlias(false);
         shadowPaint.setFilterBitmap(false);
@@ -134,10 +125,6 @@ public class RadialLayoutView extends View {
         return paint;
     }
 
-    public Paint getOutlinePaint() {
-        return outlinePaint;
-    }
-
     public Paint getShadowPaint() {
         return shadowPaint;
     }
@@ -148,25 +135,12 @@ public class RadialLayoutView extends View {
         postInvalidate();
     }
 
-    public void setCenterBitmap(Bitmap bitmap) {
-        /*int size = ConversionUtils.dpToPx();
-        int shadowSize = ConversionUtils.dpToPx(SHADOW_SIZE);
-        bitmap = ThumbnailUtils.extractThumbnail(bitmap, size - (shadowSize * 2), size - (shadowSize * 2));
-
-        RoundedBitmapDrawable drawable = RoundedBitmapDrawableFactory.create(getResources(), bitmap);
-        drawable.setCornerRadius(size / 2);
-        drawable.setAntiAlias(true);
-
-        Bitmap roundedBitmap = ImageUtils.drawableToBitmap(drawable);
-        currentUser = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_4444);
-        Canvas canvas = new Canvas(currentUser);
-        canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (size / 2) - shadowSize - 1, shadowPaint);
-        canvas.drawBitmap(roundedBitmap, shadowSize, shadowSize, paint);
-
-        currentUserScale = 0;
+    public void setCenterItem(CenteredRadialItem item) {
+        centerItem = item;
+        centerItem.scale = 0;
+        centerItem.setRadius(ConversionUtils.dpToPx(centerItem.size) / 2, shadowRadius + shadowOffset);
         clickCenterUp();
-
-        invalidate();*/
+        postInvalidate();
     }
 
     public void setCenterListener(@Nullable CenterClickListener listener) {
@@ -177,7 +151,7 @@ public class RadialLayoutView extends View {
         this.listener = listener;
     }
 
-    public List<RadialItem> getItems() {
+    public List<BaseRadialItem> getItems() {
         return new ArrayList<>(items);
     }
 
@@ -187,7 +161,7 @@ public class RadialLayoutView extends View {
      *
      * @param items the items to add
      */
-    public Builder setItems(List<RadialItem> items) {
+    public Builder setItems(List<BaseRadialItem> items) {
         this.items = items;
         if (items.size() < 1) {
             isReady = true;
@@ -199,7 +173,7 @@ public class RadialLayoutView extends View {
         return new Builder(this, items, true);
     }
 
-    public Builder updateItems(final List<RadialItem> items) {
+    public Builder updateItems(final List<BaseRadialItem> items) {
         if (!isReady)
             throw new EmptyListException("Cannot update items before they are set.");
         if (items.size() < 1)
@@ -244,28 +218,25 @@ public class RadialLayoutView extends View {
             }
         }
 
-        if (currentUser != null) {
+        if (centerItem != null) {
             if (targetCurrentUserScales.size() > 0) {
-                if (targetCurrentUserScales.size() > 1 && Math.abs(currentUserScale - targetCurrentUserScales.get(0)) < 0.01)
+                if (targetCurrentUserScales.size() > 1 && Math.abs(centerItem.scale - targetCurrentUserScales.get(0)) < 0.01)
                     targetCurrentUserScales.remove(0);
 
-                currentUserScale = (targetCurrentUserScales.get(0) + (currentUserScale * 5)) / 6;
+                centerItem.scale = (targetCurrentUserScales.get(0) + (centerItem.scale * 5)) / 6;
             }
 
             float nScale = 0;
-            float distance = (float) Math.sqrt(Math.pow(offsetX + currentUserRadius, 2) + Math.pow(offsetY + currentUserRadius, 2));
+            float distance = (float) Math.sqrt(Math.pow(offsetX + centerItem.radius, 2) + Math.pow(offsetY + centerItem.radius, 2));
             int totalRadius = (canvas.getWidth() + canvas.getHeight()) / 4;
             if (distance < totalRadius) {
-                nScale = Math.min((float) (Math.sqrt(totalRadius - distance) / Math.sqrt(currentUserRadius * 2)) * currentUserScale, currentUserScale);
+                nScale = Math.min((float) (Math.sqrt(totalRadius - distance) / Math.sqrt(centerItem.radius * 2)) * centerItem.scale, centerItem.scale);
             }
 
             if (nScale > 0) {
-                Matrix matrix = new Matrix();
-                matrix.preScale(nScale, nScale, currentUser.getWidth() / 2, currentUser.getHeight() / 2);
-                matrix.postTranslate(((canvas.getWidth() - currentUser.getWidth()) / 2) + offsetX, ((canvas.getHeight() - currentUser.getHeight()) / 2) + offsetY);
-                canvas.drawBitmap(currentUser, matrix, paint);
-
-                canvas.drawCircle((canvas.getWidth() / 2) + offsetX, (canvas.getHeight() / 2) + offsetY, (currentUser.getWidth() / 2) * nScale, outlinePaint);
+                Matrix matrix = centerItem.getMatrix(canvas.getWidth(), canvas.getHeight(), offsetX, offsetY);
+                if (matrix != null)
+                    canvas.drawBitmap(centerItem.getCircleImage(this, shadowRadius + shadowOffset), matrix, paint);
             }
         }
 
@@ -275,7 +246,7 @@ public class RadialLayoutView extends View {
             isFirstDrawn = true;
 
             for (int i = 0; i < items.size(); i++) {
-                RadialItem item = items.get(i);
+                BaseRadialItem item = items.get(i);
                 Matrix matrix = item.getMatrix(canvas.getWidth(), canvas.getHeight(), offsetX, offsetY);
                 if (matrix != null)
                     canvas.drawBitmap(item.getCircleImage(this, shadowRadius + shadowOffset), matrix, paint);
@@ -286,7 +257,7 @@ public class RadialLayoutView extends View {
             }
         }
 
-        if ((currentUser != null && targetCurrentUserScales.size() > 0 && (targetCurrentUserScales.size() > 1 || Math.abs(targetCurrentUserScales.get(0) - currentUserScale) >= 0.01))
+        if ((centerItem != null && targetCurrentUserScales.size() > 0 && (targetCurrentUserScales.size() > 1 || Math.abs(targetCurrentUserScales.get(0) - centerItem.scale) >= 0.01))
                 || offsetX != 0 || offsetY != 0 || needsFrame || !isFirstDrawn) {
             postInvalidate();
         }
@@ -305,16 +276,16 @@ public class RadialLayoutView extends View {
                 } else isIgnorant = true;
                 isDragged = false;
 
-                if (Math.sqrt(Math.pow((getWidth() / 2) - downX + offsetX, 2) + Math.pow((getHeight() / 2) - downY + offsetY, 2)) < currentUserRadius) {
+                if (Math.sqrt(Math.pow((getWidth() / 2) - downX + offsetX, 2) + Math.pow((getHeight() / 2) - downY + offsetY, 2)) < centerItem.radius) {
                     clickCenterDown();
 
-                    for (RadialItem item : items) {
+                    for (BaseRadialItem item : items) {
                         item.clickUp(this);
                     }
                 } else {
                     clickCenterUp();
 
-                    for (RadialItem item : items) {
+                    for (BaseRadialItem item : items) {
                         float itemX = (getWidth() / 2) + item.getX() + offsetX;
                         float itemY = (getHeight() / 2) + item.getY() + offsetY;
                         if (downX > itemX && downX - itemX < item.radius * 2 && downY > itemY && downY - itemY < item.radius * 2) {
@@ -335,7 +306,7 @@ public class RadialLayoutView extends View {
                     fingerY = Math.max(-distance / 2, Math.min(distance / 2, event.getY() - downY + lastY));
 
                     clickCenterUp();
-                    for (RadialItem item : items) {
+                    for (BaseRadialItem item : items) {
                         item.clickUp(this);
                     }
                     return true;
@@ -347,13 +318,13 @@ public class RadialLayoutView extends View {
                 isDragged = false;
 
                 clickCenterUp();
-                for (RadialItem item : items) {
+                for (BaseRadialItem item : items) {
                     item.clickUp(this);
                 }
                 break;
             case MotionEvent.ACTION_UP:
                 isFingerDown = false;
-                for (RadialItem item : items) {
+                for (BaseRadialItem item : items) {
                     item.clickUp(this);
                 }
 
@@ -364,7 +335,7 @@ public class RadialLayoutView extends View {
                     float eventX = event.getX();
                     float eventY = event.getY();
 
-                    if (Math.sqrt(Math.pow((getWidth() / 2) - eventX + offsetX, 2) + Math.pow((getHeight() / 2) - eventY + offsetY, 2)) < currentUserRadius) {
+                    if (Math.sqrt(Math.pow((getWidth() / 2) - eventX + offsetX, 2) + Math.pow((getHeight() / 2) - eventY + offsetY, 2)) < centerItem.radius) {
                         if (centerListener != null)
                             centerListener.onCenterClick(this);
 
@@ -373,7 +344,7 @@ public class RadialLayoutView extends View {
                         clickCenterUp();
 
                         for (int i = 0; i < items.size(); i++) {
-                            RadialItem item = items.get(i);
+                            BaseRadialItem item = items.get(i);
                             float itemX = (getWidth() / 2) + item.getX() + offsetX;
                             float itemY = (getHeight() / 2) + item.getY() + offsetY;
                             if (eventX > itemX && eventX - itemX < item.radius * 2 && eventY > itemY && eventY - itemY < item.radius * 2) {
@@ -425,13 +396,13 @@ public class RadialLayoutView extends View {
     }
 
     public interface ClickListener {
-        void onClick(RadialLayoutView layout, RadialItem item, int index);
+        void onClick(RadialLayoutView layout, BaseRadialItem item, int index);
     }
 
     public static class Builder {
 
         private RadialLayoutView view;
-        private List<RadialItem> items;
+        private List<BaseRadialItem> items;
 
         private float itemRadius;
         private float itemSeparation;
@@ -441,7 +412,7 @@ public class RadialLayoutView extends View {
         private OnAppliedListener listener;
         private boolean isFirstTime;
 
-        private Builder(RadialLayoutView view, List<RadialItem> items, boolean isFirstTime) {
+        private Builder(RadialLayoutView view, List<BaseRadialItem> items, boolean isFirstTime) {
             this.view = view;
             this.items = items;
             itemRadius = view.itemRadius;
@@ -478,7 +449,7 @@ public class RadialLayoutView extends View {
         public void apply(@Nullable OnAppliedListener listener) {
             this.listener = listener;
 
-            new Action<List<RadialItem>>() {
+            new Action<List<BaseRadialItem>>() {
                 @NonNull
                 @Override
                 public String id() {
@@ -487,12 +458,12 @@ public class RadialLayoutView extends View {
 
                 @Nullable
                 @Override
-                protected List<RadialItem> run() {
+                protected List<BaseRadialItem> run() {
                     return applySynchronous(false);
                 }
 
                 @Override
-                protected void done(@Nullable List<RadialItem> result) {
+                protected void done(@Nullable List<BaseRadialItem> result) {
                     onApplied(result);
                 }
             }.execute();
@@ -502,18 +473,18 @@ public class RadialLayoutView extends View {
             applySynchronous(true);
         }
 
-        private List<RadialItem> applySynchronous(boolean isActuallySynchronous) {
-            List<RadialItem> items = new ArrayList<>();
+        private List<BaseRadialItem> applySynchronous(boolean isActuallySynchronous) {
+            List<BaseRadialItem> items = new ArrayList<>();
             if (isFirstTime)
                 items.addAll(Builder.this.items);
             else {
-                for (RadialItem item : Builder.this.items)
-                    items.add(new RadialItem(item));
+                for (BaseRadialItem item : Builder.this.items)
+                    items.add(item.copy());
             }
 
-            Collections.sort(items, new Comparator<RadialItem>() {
+            Collections.sort(items, new Comparator<BaseRadialItem>() {
                 @Override
-                public int compare(RadialItem o1, RadialItem o2) {
+                public int compare(BaseRadialItem o1, BaseRadialItem o2) {
                     return o1.size - o2.size; //sort small -> big
                 }
             });
@@ -524,16 +495,16 @@ public class RadialLayoutView extends View {
                 items.get(i).setRadius(radius, shadowRadius + shadowOffset);
             }
 
-            Collections.sort(items, new Comparator<RadialItem>() {
+            Collections.sort(items, new Comparator<BaseRadialItem>() {
                 @Override
-                public int compare(RadialItem o1, RadialItem o2) {
+                public int compare(BaseRadialItem o1, BaseRadialItem o2) {
                     return o1.distance - o2.distance; //sort small -> big
                 }
             });
 
             int size = 0, circumference = RadialUtils.getCircumference(0, itemRadius, itemSeparation), usedCircumference = 0;
             for (int i = 0; i < items.size(); i++) {
-                RadialItem item = items.get(i);
+                BaseRadialItem item = items.get(i);
                 if (usedCircumference + (item.radius * 2) + (ConversionUtils.dpToPx(8) * i) < circumference) {
                     usedCircumference += (item.radius * 2) + ConversionUtils.dpToPx(8);
                     item.row = 0;
@@ -546,7 +517,7 @@ public class RadialLayoutView extends View {
             int padding = ((circumference - usedCircumference) / (size + 1)) + ConversionUtils.dpToPx(8);
             items.get(0).radian = -Math.PI / 2;
             for (int i = 1; i < size; i++) {
-                RadialItem item = items.get(i), previousItem = items.get(i - 1);
+                BaseRadialItem item = items.get(i), previousItem = items.get(i - 1);
                 float difference = previousItem.radius + item.radius;
                 int radius = RadialUtils.getRadius(0, itemRadius, itemSeparation);
                 double cosine = ((2 * Math.pow(radius, 2)) - Math.pow(difference, 2)) / (2 * Math.pow(radius, 2));
@@ -563,7 +534,7 @@ public class RadialLayoutView extends View {
 
                 int rowSize = 0, rowCircumference = RadialUtils.getCircumference(i, itemRadius, itemSeparation), rowUsedCircumference = 0;
                 for (int i2 = rowStart; i2 < items.size(); i2++) {
-                    RadialItem item = items.get(i2);
+                    BaseRadialItem item = items.get(i2);
                     if (rowUsedCircumference + (item.radius * 2) + (ConversionUtils.dpToPx(itemSeparation) * i) < rowCircumference) {
                         rowUsedCircumference += (item.radius * 2) + ConversionUtils.dpToPx(itemSeparation);
                         item.row = i;
@@ -577,7 +548,7 @@ public class RadialLayoutView extends View {
                 items.get(rowStart).radian = (items.get(rowStart - 1).radian + items.get(rowStart - 2).radian) / 2;
 
                 for (int i2 = rowStart; i2 < rowStart + rowSize; i2++) {
-                    RadialItem item, previousItem = items.get(i2 - 1);
+                    BaseRadialItem item, previousItem = items.get(i2 - 1);
                     try {
                         item = items.get(i2);
                     } catch (IndexOutOfBoundsException e) {
@@ -600,10 +571,10 @@ public class RadialLayoutView extends View {
             return items;
         }
 
-        private void onApplied(List<RadialItem> result) {
+        private void onApplied(List<BaseRadialItem> result) {
             if (view.isReady && result != null && !isFirstTime) {
                 for (int i = 0; i < result.size(); i++) {
-                    RadialItem item = result.get(i);
+                    BaseRadialItem item = result.get(i);
                     item.itemRadius = itemRadius;
                     item.itemSeparation = itemSeparation;
 
@@ -621,7 +592,7 @@ public class RadialLayoutView extends View {
                     view.items.get(i).removeFrom(view);
                 }
             } else {
-                for (RadialItem item : view.items) {
+                for (BaseRadialItem item : view.items) {
                     item.itemRadius = itemRadius;
                     item.itemSeparation = itemSeparation;
                     //Log.d("Radial", "Item: " + RadialLayout.this.items.indexOf(item) + ", X: " + item.getX() + ", Y: " + item.getY());
