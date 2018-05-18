@@ -132,6 +132,14 @@ public class RadialLayoutView extends View {
     public void setShadowColor(int shadowColor) {
         this.shadowColor = shadowColor;
         shadowPaint.setShadowLayer(ConversionUtils.dpToPx(shadowRadius), 0, ConversionUtils.dpToPx(shadowOffset), shadowColor);
+
+        if (centerItem != null)
+            centerItem.circleImage = null;
+
+        for (BaseRadialItem item : items) {
+            item.circleImage = null;
+        }
+
         postInvalidate();
     }
 
@@ -611,6 +619,11 @@ public class RadialLayoutView extends View {
                 }
 
                 view.isReady = true;
+            }
+
+            if (view.centerItem != null && (view.shadowRadius != shadowRadius || view.shadowOffset != shadowOffset)) {
+                view.centerItem.scaledImage = null;
+                view.centerItem.circleImage = null;
             }
 
             view.itemRadius = itemRadius;

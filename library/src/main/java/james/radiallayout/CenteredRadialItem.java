@@ -39,6 +39,8 @@ public class CenteredRadialItem extends BaseRadialItem {
 
         outlinePaint.setStrokeWidth(ConversionUtils.dpToPx(weight));
         outlinePaint.setColor(color);
+        scaledImage = null;
+        circleImage = null;
     }
 
     @Override
@@ -49,8 +51,8 @@ public class CenteredRadialItem extends BaseRadialItem {
     @Override
     void setRadius(float radius, float shadowSizeDp) {
         int shadowSize = ConversionUtils.dpToPx(shadowSizeDp);
-        float imageRadius = radius - shadowSize - outlineRadius - outlineWeight;
-        if (radius > shadowSize && (scaledImage == null || scaledImage.getWidth() != imageRadius * 2 || scaledImage.getHeight() != imageRadius * 2))
+        float imageRadius = radius - Math.max(shadowSize, ConversionUtils.dpToPx(outlineRadius + outlineWeight));
+        if (radius > imageRadius && (scaledImage == null || scaledImage.getWidth() != imageRadius * 2 || scaledImage.getHeight() != imageRadius * 2))
             scaledImage = ThumbnailUtils.extractThumbnail(image, (int) (imageRadius * 2), (int) (imageRadius * 2));
         this.radius = radius;
         targetRadius = radius;
@@ -63,19 +65,19 @@ public class CenteredRadialItem extends BaseRadialItem {
                 setRadius(radius, shadowRadiusDp);
 
             int outlineWeight = ConversionUtils.dpToPx(this.outlineWeight);
-            int extraRadius = ConversionUtils.dpToPx(this.outlineRadius) + outlineWeight;
+            int imageOffset = Math.max(ConversionUtils.dpToPx(this.outlineRadius) + outlineWeight, ConversionUtils.dpToPx(shadowRadiusDp));
 
             RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(layout.getResources(), scaledImage);
             roundedBitmapDrawable.setCornerRadius(radius);
             roundedBitmapDrawable.setAntiAlias(true);
 
             Bitmap roundedBitmap = ImageUtils.drawableToBitmap(roundedBitmapDrawable);
-            if (extraRadius > 0) {
-                circleImage = Bitmap.createBitmap(roundedBitmap.getWidth() + (extraRadius * 2), roundedBitmap.getHeight() + (extraRadius * 2), Bitmap.Config.ARGB_4444);
+            if (imageOffset > 0) {
+                circleImage = Bitmap.createBitmap(roundedBitmap.getWidth() + (imageOffset * 2), roundedBitmap.getHeight() + (imageOffset * 2), Bitmap.Config.ARGB_4444);
                 Canvas canvas = new Canvas(circleImage);
                 canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - outlineWeight - 1, outlinePaint);
-                canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - extraRadius - 1, layout.getShadowPaint());
-                canvas.drawBitmap(roundedBitmap, extraRadius, extraRadius, layout.getPaint());
+                canvas.drawCircle(canvas.getWidth() / 2, canvas.getHeight() / 2, (canvas.getWidth() / 2) - imageOffset - 1, layout.getShadowPaint());
+                canvas.drawBitmap(roundedBitmap, imageOffset, imageOffset, layout.getPaint());
             } else circleImage = roundedBitmap;
         }
 

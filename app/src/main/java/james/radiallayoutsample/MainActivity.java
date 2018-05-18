@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
                 layout.setItems(items).apply();
 
                 CenteredRadialItem centerItem = new CenteredRadialItem(resource, 64);
-                centerItem.setOutline(3, 6, ContextCompat.getColor(MainActivity.this, R.color.colorAccent));
+                centerItem.setOutline(2, 4, ContextCompat.getColor(MainActivity.this, R.color.colorAccent));
                 layout.setCenterItem(centerItem);
             }
         });
