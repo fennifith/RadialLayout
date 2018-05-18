@@ -492,7 +492,11 @@ public class RadialLayoutView extends View {
             for (int i = 0; i < items.size(); i++) {
                 int radius = ConversionUtils.dpToPx((itemRadius - 12) + (12 * ((float) i / items.size())));
                 //Log.d("Radial", "Item: " + i + ", Size: " + items.get(i).size + ", Radius: " + radius);
-                items.get(i).setRadius(radius, shadowRadius + shadowOffset);
+                BaseRadialItem item = items.get(i);
+                if (isFirstTime)
+                    item.setRadius(radius, shadowRadius + shadowOffset);
+                else if (item.radius <= 0) //only update radius for new items, reduces memory usage & makes transition smoother
+                    item.radius = radius;
             }
 
             Collections.sort(items, new Comparator<BaseRadialItem>() {

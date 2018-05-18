@@ -32,9 +32,10 @@ public class RadialItem extends BaseRadialItem {
     @Override
     void setRadius(float radius, float shadowSizeDp) {
         int shadowSize = ConversionUtils.dpToPx(shadowSizeDp) * 2;
-        if (radius > shadowSize && (scaledImage == null || scaledImage.getWidth() != (radius * 2) - shadowSize || scaledImage.getHeight() != (radius * 2) - shadowSize)) {
+        int size = (int) ((radius + ConversionUtils.dpToPx(shadowSizeDp)) * 2);
+        if (radius > shadowSize && size > 0 && (scaledImage == null || scaledImage.getWidth() != size || scaledImage.getHeight() != size)) {
             //Log.d("RadialLayout", "new " + (scaledImage == null ? "scaled bitmap" : "radius"));
-            scaledImage = ThumbnailUtils.extractThumbnail(image, (int) ((radius * 2) - shadowSize), (int) ((radius * 2) - shadowSize));
+            scaledImage = ThumbnailUtils.extractThumbnail(image, size, size);
         }
         this.radius = radius;
         targetRadius = radius;
