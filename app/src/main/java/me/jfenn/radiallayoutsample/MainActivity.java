@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         layout = findViewById(R.id.radialLayout);
 
-        Glide.with(this).asBitmap().load("https://TheAndroidMaster.github.io/images/headers/highway.jpg").into(new SimpleTarget<Bitmap>() {
+        Glide.with(this).asBitmap().load("https://jfenn.me/images/headers/highway.jpg").into(new SimpleTarget<Bitmap>() {
             @Override
             public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
                 MainActivity.this.resource = resource;
